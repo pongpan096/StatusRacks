@@ -251,20 +251,21 @@ export default function FloorPlan() {
 
   useEffect(() => { loadAll(); }, []);
 
-  const loadAll = async () => {
-    try {
-      const [rackRes, crahRes] = await Promise.all([
-        api.get('/racks'),
-        api.get('/crah')
-      ]);
-      setRacks(rackRes.data);
-      setCrahUnits(crahRes.data);
-    } catch (err) {
-      console.error('โหลดข้อมูลไม่สำเร็จ:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadAll = async () => {
+  setLoading(true);
+  try {
+    const [racksRes, crahRes] = await Promise.all([
+      api.get('/racks'),
+      api.get('/crah')
+    ]);
+    setRacks(racksRes.data);
+    setCrahUnits(crahRes.data);
+  } catch (err) {
+    console.error('Error loading data:', err);
+  } finally {
+    setLoading(false); // ← ตัวนี้ต้องมี เพื่อบังคับให้ปิดหน้าจอ "กำลังโหลด" เสมอ
+  }
+};
 
   const handleClickRack = async (rack) => {
     const newStatus = rackNextStatus[rack.power_status];

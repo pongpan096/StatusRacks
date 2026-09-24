@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -7,19 +8,24 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setErrorMessage('');
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setErrorMessage('');
 
-    // 💡 ระบบจำลองการเข้าสู่ระบบ: กด Enter หรือคลิกปุ่มแล้วพาไปหน้า Floor Plan ทันที
-    if (email && password) {
-      // ถ้าต้องการเก็บสถานะผู้ใช้เบื้องต้น สามารถเก็บใส่ localStorage ได้ที่นี่
-      localStorage.setItem('isLoggedIn', 'true');
-      navigate('/floorplan'); // เปลี่ยนเส้นทางไปหน้า Floor Plan
-    } else {
-      setErrorMessage('กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน');
-    }
-  };
+  if (!email || !password) {
+    setErrorMessage('กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน');
+    return;
+  }
+  try {
+    const res = await api.post('/auth/login', { email, password });
+    // สมมติ backend ส่งกลับ { token: "xxxxx" }
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('isLoggedIn', 'true');
+    navigate('/floorplan');
+  } catch (err) {
+    setErrorMessage('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+  }
+};
 
   return (
     <div style={{ 
