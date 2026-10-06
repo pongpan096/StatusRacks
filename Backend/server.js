@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const supabase = require('./config/supabase');
+const rackDevicesRouter = require('./routes/rackDevices');
 
 const app = express();
 
@@ -27,6 +28,11 @@ app.use('/api/racks', require('./routes/rack'));
 app.use('/api/crah', require('./routes/crah'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/audit', require('./routes/audit'));
+app.use('/api/rack-devices', require('./routes/rackDevices'));
+
+
+
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server started: http://localhost:${PORT}`));

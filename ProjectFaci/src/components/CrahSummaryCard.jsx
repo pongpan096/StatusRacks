@@ -1,11 +1,11 @@
 import React from 'react';
 
 const GROUP_ORDER = [
-  'CRAH-1 (01-11)', 
-  'CRAH-2 (22-12)', 
-  'NET-1 (25-26)', 
-  'NET-2 (27-28)', 
-  'TEL-1 (23-24)', 
+  'CRAH-1 (01-11)',
+  'CRAH-2 (22-12)',
+  'NET-1 (25-26)',
+  'NET-2 (27-28)',
+  'TEL-1 (23-24)',
   'TEL-2 (29-30)'
 ];
 
@@ -37,7 +37,7 @@ export default function CrahSummaryCard({ crahList = [] }) {
   return (
     <div style={{ background: '#fff', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
       <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: 'bold' }}>❄️ สรุปสถานะ เครื่องปรับอากาศ CRAH</h3>
-      
+
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', fontFamily: 'sans-serif' }}>
         <thead>
           <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #d1d5db' }}>

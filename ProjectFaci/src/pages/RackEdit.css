@@ -1,0 +1,298 @@
+/* Container หลัก */
+.page-container {
+  max-width: 550px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1f2937;
+}
+
+/* ส่วนหัวข้อ */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-head h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* แถบค้นหา */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e5e7eb;
+}
+
+.filter-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.filter-bar input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ปุ่มทั่วไป */
+.btn-ghost {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-ghost:hover {
+  background-color: #e5e7eb;
+}
+
+/* กล่องข้อความสถานะ (ตอนยังไม่ค้นหาหรือโหลด) */
+.loading-box {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.1rem;
+  color: #6b7280;
+  background: #f9fafb;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+/* แถบเลือกทั้งหมด / Bulk Actions */
+.bulk-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 14px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.check-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bulk-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.bulk-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.bulk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Grid แสดงการ์ด Rack */
+.rack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* การ์ด Rack แต่ละตัว */
+.rack-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.rack-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.rack-card.is-selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.rack-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rack-card__name {
+  flex: 1;
+}
+
+.rack-card__name strong {
+  font-size: 1.05rem;
+  color: #1f2937;
+  display: block;
+}
+
+/* จุดสถานะวงกลม */
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ปุ่มเปลี่ยนสถานะภายใน Card */
+.rack-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status-btn {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.status-btn:hover {
+  opacity: 0.85;
+}
+
+/* Toast แจ้งเตือน */
+.toast {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.toast--success {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.toast--error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+
+/* ตู้ Rack Face View แบบจัดเรียงตาราง */
+.face-rack-grid-wrapper {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fafb;
+  margin-top: 16px;
+}
+
+.face-rack-table-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 140px;
+  background: #1f2937;
+  color: #ffffff;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.face-rack-table-header span:nth-child(2) {
+  text-align: left;
+}
+
+.face-rack-units {
+  max-height: 500px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.face-rack-unit-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 140px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  background: #ffffff;
+  font-size: 0.9rem;
+}
+
+.face-rack-unit-row:hover {
+  background: #f3f4f6;
+}
+
+.unit-number {
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  background: #e5e7eb;
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.unit-device-info {
+  color: #1f2937;
+  padding-left: 12px;
+  text-align: left;
+}
+
+.text-muted {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.unit-power-status {
+  text-align: center;
+}
+
+.power-tag {
+  background: #e5e7eb;
+  color: #374151;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
