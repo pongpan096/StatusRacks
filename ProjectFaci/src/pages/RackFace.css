@@ -3,30 +3,37 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, .05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,.05);
 }
 
+/* ---------- หัวตู้ ---------- */
 .rackface__head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
   border-bottom: 2px solid #f3f4f6;
   padding-bottom: 16px;
   margin-bottom: 20px;
 }
-
 .rackface__head h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-
-.rackface__sub {
-  margin: 6px 0 0;
-  color: #6b7280;
-  font-size: .9rem;
+.rackface__zone-target {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 1rem;
+  border: 1px solid #bfdbfe;
 }
+.rackface__sub { margin: 8px 0 0; color: #6b7280; font-size: .9rem; }
 
 /* ---------- ฟอร์ม ---------- */
 .device-form {
@@ -36,37 +43,16 @@
   padding: 18px;
   margin-bottom: 24px;
 }
-
-.device-form__title {
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 14px;
-}
-
+.device-form__title { font-weight: 700; color: #1f2937; margin-bottom: 14px; }
 .device-form__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px;
 }
-
-.device-form__full {
-  grid-column: 1 / -1;
-}
-
-.device-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.device-form label span {
-  font-size: .85rem;
-  font-weight: 600;
-  color: #4b5563;
-}
-
-.device-form input,
-.device-form select {
+.device-form__full { grid-column: 1 / -1; }
+.device-form label { display: flex; flex-direction: column; gap: 6px; }
+.device-form label span { font-size: .85rem; font-weight: 600; color: #4b5563; }
+.device-form input {
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -74,13 +60,20 @@
   outline: none;
   background: #fff;
 }
-
-.device-form input:focus,
-.device-form select:focus {
+.device-form input:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
 }
-
+/* ซ่อนลูกศรขึ้น-ลงของช่องตัวเลข */
+.device-form input[type=number]::-webkit-outer-spin-button,
+.device-form input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.device-form input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 .device-form__error {
   margin-top: 12px;
   background: #fee2e2;
@@ -90,12 +83,7 @@
   border-radius: 8px;
   font-size: .9rem;
 }
-
-.device-form__actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-}
+.device-form__actions { display: flex; gap: 10px; margin-top: 16px; }
 
 .btn-primary {
   padding: 10px 22px;
@@ -106,24 +94,29 @@
   font-weight: 600;
   cursor: pointer;
 }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 
-.btn-primary:hover {
-  background: #1d4ed8;
+.btn-ghost {
+  padding: 8px 16px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: .85rem;
+  cursor: pointer;
+  white-space: nowrap;
 }
+.btn-ghost:hover { background: #f3f4f6; }
 
-.btn-primary:disabled {
-  opacity: .6;
-  cursor: not-allowed;
-}
-
-/* ---------- ตู้แร็ค ---------- */
+/* ---------- ตัวตู้แร็ค ---------- */
 .rackface__cabinet {
   border: 3px solid #1f2937;
   border-radius: 10px;
   overflow: hidden;
   background: #111827;
 }
-
 .rackface__cabinet-head {
   display: grid;
   grid-template-columns: 70px 1fr 150px;
@@ -133,26 +126,13 @@
   font-weight: 600;
   font-size: .9rem;
 }
+.rackface__cabinet-head span:first-child,
+.rackface__cabinet-head span:last-child { text-align: center; }
 
-.rackface__cabinet-head span:first-child {
-  text-align: center;
-}
+.rackface__units { background: #374151; padding: 6px; }
+.rackface__loading { padding: 40px; text-align: center; color: #e5e7eb; }
 
-.rackface__cabinet-head span:last-child {
-  text-align: center;
-}
-
-.rackface__units {
-  background: #374151;
-  padding: 6px;
-}
-
-.rackface__loading {
-  padding: 40px;
-  text-align: center;
-  color: #e5e7eb;
-}
-
+/* ---------- แถวยูนิต ---------- */
 .unit-row {
   display: grid;
   grid-template-columns: 70px 1fr 150px;
@@ -169,7 +149,6 @@
   font-size: .8rem;
   color: #9ca3af;
   background: #1f2937;
-  padding: 8px 0;
   border-radius: 4px 0 0 4px;
   height: 100%;
   display: flex;
@@ -177,16 +156,8 @@
   justify-content: center;
 }
 
-.unit-row--empty {
-  background: #4b5563;
-  cursor: pointer;
-  transition: background .15s;
-}
-
-.unit-row--empty:hover {
-  background: #6b7280;
-}
-
+.unit-row--empty { background: #4b5563; cursor: pointer; transition: background .15s; }
+.unit-row--empty:hover { background: #6b7280; }
 .unit-info--empty {
   color: #d1d5db;
   font-style: italic;
@@ -194,30 +165,37 @@
   font-size: .82rem;
 }
 
-.unit-row--filled {
+/* ---------- กล่องอุปกรณ์ (รองรับทุกขนาด U) ---------- */
+.unit-row--multi {
+  display: grid;
+  grid-template-columns: 70px 1fr 150px;
   background: #eff6ff;
   border: 1px solid #93c5fd;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  align-items: center;
+  overflow: hidden;
 }
 
-.unit-row--filled .unit-no {
+.unit-no-stack {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: #1d4ed8;
-  color: #fff;
 }
-
-.unit-row--merged {
-  background: #eff6ff;
-  border-left: 1px solid #93c5fd;
-  border-right: 1px solid #93c5fd;
-  border-top: none;
-  border-bottom: none;
-}
-
-.unit-row--merged .unit-no {
-  background: #1d4ed8;
+.sub-u-badge {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .75rem;
   color: #bfdbfe;
+  border-bottom: 1px solid rgba(255,255,255,.15);
 }
+.sub-u-badge:last-child { border-bottom: none; color: #fff; }
 
-/* จัดข้อมูลให้อยู่ตรงกลางแนวตั้งพอดี และปรับฟอนต์ให้ชัดขึ้น */
+/* ข้อมูลอยู่กึ่งกลางแนวตั้งเสมอ ไม่ว่าจะกี่ U */
 .unit-info {
   padding-left: 16px;
   display: flex;
@@ -226,94 +204,32 @@
   gap: 3px;
   height: 100%;
 }
-
 .unit-info strong {
   color: #1e3a8a;
   font-size: 1.05rem;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: .3px;
 }
-
-.unit-info small {
-  color: #334155;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
+.unit-info small { color: #334155; font-size: .85rem; font-weight: 500; }
 
 .unit-actions {
   display: flex;
   gap: 6px;
   justify-content: center;
+  align-items: center;
   padding-right: 8px;
 }
-
-.plus-hint {
-  color: #d1d5db;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
+.plus-hint { color: #d1d5db; font-size: 1.1rem; font-weight: 700; }
 
 .mini-btn {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 5px;
   font-size: .75rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
 }
-
-/* กล่องรวมสำหรับอุปกรณ์ที่มีขนาดมากกว่า 1U ขึ้นไป */
-.unit-row--multi {
-  display: grid;
-  grid-template-columns: 70px 1fr 150px;
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
-  margin-bottom: 2px;
-  border-radius: 4px;
-  align-items: center;
-  /* ดึงทุกอย่างมาอยู่กึ่งกลางแนวตั้งของกล่องนี้พอดี */
-}
-
-/* แถบแสดงหมายเลข U แบบเรียงซ้อนกัน (เช่น U5 และ U4) */
-.unit-no-stack {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  background: #1d4ed8;
-  border-radius: 4px 0 0 4px;
-  overflow: hidden;
-}
-
-.sub-u-badge {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.75rem;
-  color: #bfdbfe;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.sub-u-badge:last-child {
-  border-bottom: none;
-  color: #fff;
-}
-
-.mini-btn--edit {
-  background: #2563eb;
-  color: #fff;
-}
-
-.mini-btn--edit:hover {
-  background: #1d4ed8;
-}
-
-.mini-btn--del {
-  background: #dc2626;
-  color: #fff;
-}
-
-.mini-btn--del:hover {
-  background: #b91c1c;
-}
+.mini-btn--edit { background: #2563eb; color: #fff; }
+.mini-btn--edit:hover { background: #1d4ed8; }
+.mini-btn--del { background: #dc2626; color: #fff; }
+.mini-btn--del:hover { background: #b91c1c; }

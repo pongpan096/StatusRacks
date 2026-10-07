@@ -8,6 +8,57 @@ import './RackFace.css';
 
 
 
+// ลำดับโซน → ชื่อ category ในฐานข้อมูล (แก้เพิ่มที่เดียวจบถ้ามีโซนใหม่)
+const ZONE_BY_CODE = {
+  '1': 'net',
+  '2': 'tel',
+};
+
+// แผนที่ย้อนกลับ: ชื่อ category → ลำดับโซน (ใช้ตอนแสดงผล)
+const CODE_BY_ZONE = Object.entries(ZONE_BY_CODE)
+  .reduce((acc, [code, name]) => ({ ...acc, [name]: code }), {});
+
+/**
+ * ถอดรหัสค้นหา 3 ส่วน → คืนค่าเป้าหมายที่จะเอาไปเทียบกับฐานข้อมูล
+ * รองรับตัวคั่นทั้ง "-", "_" และช่องว่าง
+ * คืน null เมื่อรูปแบบไม่ถูกต้อง หรือพิมพ์ไม่ครบ 3 ส่วน
+ */
+function parseRackCode(input) {
+  const raw = String(input || '').trim().toLowerCase();
+  if (!raw) return null;
+
+  const parts = raw.split(/[-_\s]+/).filter(Boolean);
+
+  // กติกาเหล็ก: ต้องครบ 3 ส่วนเท่านั้น
+  if (parts.length !== 3) return null;
+
+  const [p1, p2, p3] = parts;
+
+  // ส่วนที่ 2 และ 3 ต้องเป็นตัวเลขเสมอ
+  if (!/^\d+$/.test(p2) || !/^\d+$/.test(p3)) return null;
+
+  const row = String(Number(p2));  // "02" → "2"
+  const rack = String(Number(p3));  // "03" → "3"
+
+  const isNumericZone = /^\d+$/.test(p1);
+  const zoneCode = isNumericZone ? String(Number(p1)) : CODE_BY_ZONE[p1];
+  const category = isNumericZone ? ZONE_BY_CODE[String(Number(p1))] : p1;
+
+  if (!category) return null;  // รหัสโซนที่ไม่มีอยู่จริง
+
+  return {
+    category,                        // "net" / "tel"
+    zoneName: `${category}-${row}`,  // "net-2"
+    row,
+    rack,
+    isNumericZone,                   // พิมพ์มาเป็นตัวเลขหรือตัวอักษร
+    zoneCode,                        // "1" / "2"
+    // ข้อความที่จะไปโชว์บนหัวตู้
+    displayLabel: isNumericZone
+      ? `Zone ${zoneCode} • Row ${row} • Rack ${rack}`
+      : `${category.toUpperCase()}-${row} • Rack ${rack}`,
+  };
+}
 
 
 export default function RackEdit() {
@@ -48,37 +99,20 @@ export default function RackEdit() {
     [racks]
   );
 
-const filtered = useMemo(() => {
-  if (!search.trim()) return [];
-  const keyword = search.toLowerCase().trim();
+  // ถอดรหัสครั้งเดียว แล้วใช้ร่วมกันทั้งการกรองและการแสดงผล
+  const parsed = useMemo(() => parseRackCode(search), [search]);
 
-  return racks.filter((rack) => {
-    const zone = String(rack.zone_name || '').toLowerCase(); // เช่น "net-1" หรือ "tel-1"
-    const num = String(rack.rack_number || '');             // เช่น "3"
-    
-    // 1. รูปแบบมาตรฐาน เช่น "net-1-3"
-    const standardCode = `${zone}-${num}`;
-    
-    // 2. แปลงรูปแบบ "01-02-03" ให้เทียบเคียงได้
-    // สมมติ 01 คือรหัสโซน, 02 คือแถว, 03 คือ rack_number ตัวท้าย
-    const parts = keyword.split('-');
-    let matchCustom = false;
-    if (parts.length === 3) {
-      const searchRackNum = String(Number(parts[2])); // แปลง "03" เป็น "3" เพื่อให้ตรงกับ rack_number
-      // เช็กว่าลงท้ายด้วยโซนที่พิมพ์มา และเลขแร็คตรงกันไหม
-      if (zone.includes(parts[0]) && num === searchRackNum) {
-        matchCustom = true;
-      }
-    }
+  const filtered = useMemo(() => {
+    if (!parsed) return [];   // ไม่ครบ 3 ส่วน → ไม่แสดงอะไรเลย
 
-    return (
-      keyword === standardCode ||
-      matchCustom ||
-      keyword === zone ||
-      keyword === num
-    );
-  });
-}, [racks, search]);
+    return racks.filter((rack) => {
+      const zone = String(rack.zone_name || '').trim().toLowerCase();
+      const num = String(rack.rack_number ?? '').trim();
+
+      // เทียบแบบ === เป๊ะทั้งคู่ ไม่ใช้ includes เด็ดขาด
+      return zone === parsed.zoneName && num === parsed.rack;
+    });
+  }, [racks, parsed]);
 
   const summary = useMemo(() => ({
     total: filtered.length,
@@ -148,7 +182,9 @@ const filtered = useMemo(() => {
 
       <div className="filter-bar">
         <input
-          placeholder="ค้นหา เช่น 01-01-02 หรือชื่อ Rack..."
+          type="text"
+          className="rackedit__search"
+          placeholder="พิมพ์รหัสให้ครบ เช่น 01-02-03 หรือ TEL-2-2"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -157,20 +193,24 @@ const filtered = useMemo(() => {
         </button>
       </div>
 
-      {loading ? (
+            {loading ? (
         <div className="loading-box">กำลังโหลดข้อมูล...</div>
       ) : !search.trim() ? (
         <div className="loading-box" style={{ color: '#6b7280' }}>
-          กรุณาพิมพ์ค้นหา Rack ที่ต้องการ (เช่น 01-01-02)
+          กรุณาพิมพ์คำค้นหา Rack ที่ต้องการ (เช่น 01-01-02)
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="loading-box">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>
-      ) : (
+      ) : filtered.length > 0 ? (
         <div className="rack-face-container">
           {filtered.map((rack) => (
-            <RackFace key={rack.id} rack={rack} />
+            <RackFace
+              key={rack.id}
+              rack={rack}
+              displayLabel={parsed?.displayLabel}
+            />
           ))}
         </div>
+      ) : (
+        <div className="rackedit__empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>
       )}
     </div>
   );
