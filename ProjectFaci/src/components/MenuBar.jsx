@@ -27,12 +27,9 @@ export default function MenuBar() {
         
         {/* ★ เพิ่มเมนูนี้ เพื่อกดเข้าไปหน้าแก้ไขสถานะ Rack */}
         <NavLink to="/rack-edit" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`}>
-          Rack Edit
+          FaceRack
         </NavLink>
 
-        <NavLink to="/crah-status" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`}>
-          CRAH Status
-        </NavLink>
       </nav>
 
       <div className="menubar__right">

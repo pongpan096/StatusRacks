@@ -1,235 +1,239 @@
+/* ═══════════════ CSS หน้าผังตู้แร็ค (RackFace) โทนเข้มคมชัด ═══════════════ */
+
 .rackface {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  padding: 20px;
+  background: #f1f5f9;
   border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,.05);
 }
 
-/* ---------- หัวตู้ ---------- */
-.rackface__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  border-bottom: 2px solid #f3f4f6;
-  padding-bottom: 16px;
+.rackface__header {
   margin-bottom: 20px;
 }
-.rackface__head h2 {
-  margin: 0;
-  font-size: 1.15rem;
-  color: #111827;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.rackface__zone-target {
-  background: #eff6ff;
-  color: #1d4ed8;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 1rem;
-  border: 1px solid #bfdbfe;
-}
-.rackface__sub { margin: 8px 0 0; color: #6b7280; font-size: .9rem; }
 
-/* ---------- ฟอร์ม ---------- */
-.device-form {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+.rackface__header h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.rackface__sub {
+  font-size: 0.9rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* ฟอร์มเพิ่ม/แก้ไขอุปกรณ์ */
+.rack-form {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 18px;
   margin-bottom: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
-.device-form__title { font-weight: 700; color: #1f2937; margin-bottom: 14px; }
-.device-form__grid {
+
+.rack-form h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 14px;
+  color: #1e293b;
+}
+
+.rack-form__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
 }
-.device-form__full { grid-column: 1 / -1; }
-.device-form label { display: flex; flex-direction: column; gap: 6px; }
-.device-form label span { font-size: .85rem; font-weight: 600; color: #4b5563; }
-.device-form input {
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: .95rem;
+
+.rack-form__grid input,
+.rack-form__note {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  color: #0f172a;
   outline: none;
   background: #fff;
 }
-.device-form input:focus {
+
+.rack-form__grid input:focus,
+.rack-form__note:focus {
   border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
-/* ซ่อนลูกศรขึ้น-ลงของช่องตัวเลข */
-.device-form input[type=number]::-webkit-outer-spin-button,
-.device-form input[type=number]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.device-form input[type=number] {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-.device-form__error {
-  margin-top: 12px;
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: .9rem;
-}
-.device-form__actions { display: flex; gap: 10px; margin-top: 16px; }
 
-.btn-primary {
-  padding: 10px 22px;
-  background: #2563eb;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
+.rack-form__note {
+  margin-bottom: 14px;
 }
-.btn-primary:hover { background: #1d4ed8; }
-.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 
-.btn-ghost {
-  padding: 8px 16px;
-  background: #fff;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: .85rem;
-  cursor: pointer;
-  white-space: nowrap;
+.rack-form__actions {
+  display: flex;
+  gap: 10px;
 }
-.btn-ghost:hover { background: #f3f4f6; }
 
-/* ---------- ตัวตู้แร็ค ---------- */
-.rackface__cabinet {
-  border: 3px solid #1f2937;
+/* ═══════════════ โครงสร้างตู้แร็คและช่อง U ═══════════════ */
+
+.rack-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #334155; /* ปรับโครงตู้ให้เข้มขึ้น ตัดกับตาสบายขึ้น */
+  padding: 8px;
   border-radius: 10px;
-  overflow: hidden;
-  background: #111827;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
 }
-.rackface__cabinet-head {
-  display: grid;
-  grid-template-columns: 70px 1fr 150px;
-  background: #1f2937;
-  color: #fff;
-  padding: 10px 14px;
-  font-weight: 600;
-  font-size: .9rem;
-}
-.rackface__cabinet-head span:first-child,
-.rackface__cabinet-head span:last-child { text-align: center; }
 
-.rackface__units { background: #374151; padding: 6px; }
-.rackface__loading { padding: 40px; text-align: center; color: #e5e7eb; }
-
-/* ---------- แถวยูนิต ---------- */
+/* แถวช่องว่าง (Empty Unit) */
 .unit-row {
-  display: grid;
-  grid-template-columns: 70px 1fr 150px;
+  display: flex;
   align-items: center;
-  min-height: 38px;
-  margin-bottom: 2px;
-  border-radius: 4px;
-  font-size: .9rem;
+  background: #ffffff;
+  height: 38px;
+  border-radius: 5px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.unit-row--empty {
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
 .unit-no {
-  text-align: center;
+  width: 45px;
   font-weight: 700;
-  font-size: .8rem;
-  color: #9ca3af;
-  background: #1f2937;
-  border-radius: 4px 0 0 4px;
-  height: 100%;
+  color: #475569;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.unit-empty-text {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* แถวที่มีอุปกรณ์อยู่ (รองรับหลาย U) */
+.unit-row--multi {
   display: flex;
   align-items: center;
-  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #94a3b8;
+  border-left: 5px solid #2563eb;
+  border-radius: 6px;
+  padding: 4px 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  box-sizing: border-box;
 }
 
-.unit-row--empty { background: #4b5563; cursor: pointer; transition: background .15s; }
-.unit-row--empty:hover { background: #6b7280; }
-.unit-info--empty {
-  color: #d1d5db;
-  font-style: italic;
-  padding-left: 14px;
-  font-size: .82rem;
+/* ไฮไลต์กรณีค้นหาเจอ */
+.unit-row--hit {
+  background: #dbeafe; /* สีฟ้าเข้มขึ้น อ่านง่ายชัดเจน */
+  border-color: #2563eb;
+  border-left-width: 7px;
 }
 
-/* ---------- กล่องอุปกรณ์ (รองรับทุกขนาด U) ---------- */
-.unit-row--multi {
-  display: grid;
-  grid-template-columns: 70px 1fr 150px;
-  background: #eff6ff;
-  border: 1px solid #93c5fd;
-  border-radius: 4px;
-  margin-bottom: 2px;
-  align-items: center;
-  overflow: hidden;
-}
-
+/* กล่องเลขยูนิตด้านซ้ายของอุปกรณ์ */
 .unit-no-stack {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: #1d4ed8;
-}
-.sub-u-badge {
-  flex: 1;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: .75rem;
-  color: #bfdbfe;
-  border-bottom: 1px solid rgba(255,255,255,.15);
+  width: 45px;
+  flex-shrink: 0;
+  border-right: 1px solid #cbd5e1;
+  margin-right: 12px;
+  padding-right: 8px;
 }
-.sub-u-badge:last-child { border-bottom: none; color: #fff; }
 
-/* ข้อมูลอยู่กึ่งกลางแนวตั้งเสมอ ไม่ว่าจะกี่ U */
+.sub-u-badge {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+/* ข้อมูลอุปกรณ์ตรงกลาง */
 .unit-info {
-  padding-left: 16px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  height: 100%;
+  overflow: hidden;
+  padding-right: 10px;
 }
-.unit-info strong {
-  color: #1e3a8a;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: .3px;
-}
-.unit-info small { color: #334155; font-size: .85rem; font-weight: 500; }
 
+.unit-info strong {
+  font-size: 0.95rem;
+  color: #020617; /* ตัวหนังสือเข้มสุด อ่านง่าย */
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unit-info small {
+  font-size: 0.82rem;
+  color: #334155; /* ปรับสีเทาให้เข้มขึ้น ไม่จางเกินไป */
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* ป้ายคำว่า "ตรงกับที่ค้นหา" */
+.hit-badge {
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* กลุ่มปุ่มจัดการด้านขวา */
 .unit-actions {
   display: flex;
   gap: 6px;
-  justify-content: center;
-  align-items: center;
-  padding-right: 8px;
+  flex-shrink: 0;
 }
-.plus-hint { color: #d1d5db; font-size: 1.1rem; font-weight: 700; }
 
 .mini-btn {
   padding: 5px 12px;
-  border-radius: 5px;
-  font-size: .75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
   font-weight: 600;
-  border: none;
   cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
 }
-.mini-btn--edit { background: #2563eb; color: #fff; }
-.mini-btn--edit:hover { background: #1d4ed8; }
-.mini-btn--del { background: #dc2626; color: #fff; }
-.mini-btn--del:hover { background: #b91c1c; }
+
+.mini-btn--move {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #86efac;
+}
+.mini-btn--move:hover { background: #dcfce7; }
+
+.mini-btn--edit {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+.mini-btn--edit:hover { background: #dbeafe; }
+
+.mini-btn--del {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.mini-btn--del:hover { background: #fee2e2; }

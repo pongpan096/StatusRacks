@@ -1,84 +1,70 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
-import { RACK_STATUS, RACK_STATUS_LIST, getRackColor, getRackLabel } from '../constants/status';
+import { RACK_STATUS_LIST, getRackColor, getRackLabel } from '../constants/status';
 import RackFace from './RackFace';
 import './RackEdit.css';
 import './RackFace.css';
 
+/* ═══════════════ ค่าคงที่และฟังก์ชันช่วยเหลือ ═══════════════ */
 
+const MIN_SERIAL_LENGTH = 4;
 
-// ลำดับโซน → ชื่อ category ในฐานข้อมูล (แก้เพิ่มที่เดียวจบถ้ามีโซนใหม่)
-const ZONE_BY_CODE = {
-  '1': 'net',
-  '2': 'tel',
-};
-
-// แผนที่ย้อนกลับ: ชื่อ category → ลำดับโซน (ใช้ตอนแสดงผล)
-const CODE_BY_ZONE = Object.entries(ZONE_BY_CODE)
-  .reduce((acc, [code, name]) => ({ ...acc, [name]: code }), {});
+function getZone(rack) {
+  return String(rack?.zone_name ?? rack?.zone ?? '').trim();
+}
 
 /**
- * ถอดรหัสค้นหา 3 ส่วน → คืนค่าเป้าหมายที่จะเอาไปเทียบกับฐานข้อมูล
- * รองรับตัวคั่นทั้ง "-", "_" และช่องว่าง
- * คืน null เมื่อรูปแบบไม่ถูกต้อง หรือพิมพ์ไม่ครบ 3 ส่วน
+ * รองรับการพิมพ์รูปแบบ: 1-11-12 (หมายถึง Zone 1, Row 11, Rack 12)
+ * หรือพิมพ์เต็มๆ เช่น Zone 1 Row 11
  */
 function parseRackCode(input) {
-  const raw = String(input || '').trim().toLowerCase();
+  const raw = String(input || '').trim();
   if (!raw) return null;
 
   const parts = raw.split(/[-_\s]+/).filter(Boolean);
+  
+  if (parts.length === 3) {
+    const [p1, p2, p3] = parts;
+    if (/^\d+$/.test(p1) && /^\d+$/.test(p2) && /^\d+$/.test(p3)) {
+      const zoneNum = Number(p1);
+      const rowNum = Number(p2);
+      const rackNum = String(Number(p3));
 
-  // กติกาเหล็ก: ต้องครบ 3 ส่วนเท่านั้น
-  if (parts.length !== 3) return null;
+      const targetZoneName = `Zone ${zoneNum} Row ${rowNum}`.toLowerCase();
 
-  const [p1, p2, p3] = parts;
+      return {
+        zoneName: targetZoneName,
+        rack: rackNum,
+        displayLabel: `Zone ${zoneNum} • Row ${rowNum} • Rack ${rackNum}`,
+      };
+    }
+  }
 
-  // ส่วนที่ 2 และ 3 ต้องเป็นตัวเลขเสมอ
-  if (!/^\d+$/.test(p2) || !/^\d+$/.test(p3)) return null;
-
-  const row = String(Number(p2));  // "02" → "2"
-  const rack = String(Number(p3));  // "03" → "3"
-
-  const isNumericZone = /^\d+$/.test(p1);
-  const zoneCode = isNumericZone ? String(Number(p1)) : CODE_BY_ZONE[p1];
-  const category = isNumericZone ? ZONE_BY_CODE[String(Number(p1))] : p1;
-
-  if (!category) return null;  // รหัสโซนที่ไม่มีอยู่จริง
-
-  return {
-    category,                        // "net" / "tel"
-    zoneName: `${category}-${row}`,  // "net-2"
-    row,
-    rack,
-    isNumericZone,                   // พิมพ์มาเป็นตัวเลขหรือตัวอักษร
-    zoneCode,                        // "1" / "2"
-    // ข้อความที่จะไปโชว์บนหัวตู้
-    displayLabel: isNumericZone
-      ? `Zone ${zoneCode} • Row ${row} • Rack ${rack}`
-      : `${category.toUpperCase()}-${row} • Rack ${rack}`,
-  };
+  return null;
 }
 
+/* ═══════════════ คอมโพเนนต์หลัก ═══════════════ */
 
 export default function RackEdit() {
   const { canWrite } = useAuth();
 
   const [racks, setRacks] = useState([]);
+  const [serialHits, setSerialHits] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  
+  const [search, setSearch] = useState('');   // ค่าที่พิมพ์ในช่อง input
+  const [query, setQuery] = useState('');     // ค่าจริงที่จะใช้ค้นหา (อัปเดตเมื่อกดปุ่มหรือกด Enter)
 
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [filterZone, setFilterZone] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [search, setSearch] = useState('');
-
+  /* ───── โหลดข้อมูล Rack ทั้งหมด ───── */
   const loadRacks = async () => {
     setLoading(true);
     try {
       const res = await api.get('/racks');
-      setRacks(res.data);
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setRacks(list);
     } catch {
       setMessage({ type: 'error', text: 'โหลดข้อมูล Rack ไม่สำเร็จ' });
     } finally {
@@ -86,127 +72,236 @@ export default function RackEdit() {
     }
   };
 
-  useEffect(() => { loadRacks(); }, []);
+  useEffect(() => {
+    loadRacks();
+  }, []);
 
+  // ข้อความแจ้งเตือนหายเองใน 3 วินาที
   useEffect(() => {
     if (!message) return;
     const t = setTimeout(() => setMessage(null), 3000);
     return () => clearTimeout(t);
   }, [message]);
 
-  const zones = useMemo(
-    () => [...new Set(racks.map((r) => r.zone).filter(Boolean))].sort(),
-    [racks]
-  );
+  /* ───── ชั้นที่ 1: ถอดรหัสจากคำค้นหาที่กดปุ่มแล้ว ───── */
+  const parsed = useMemo(() => parseRackCode(query), [query]);
 
-  // ถอดรหัสครั้งเดียว แล้วใช้ร่วมกันทั้งการกรองและการแสดงผล
-  const parsed = useMemo(() => parseRackCode(search), [search]);
-
-  const filtered = useMemo(() => {
-    if (!parsed) return [];   // ไม่ครบ 3 ส่วน → ไม่แสดงอะไรเลย
-
-    return racks.filter((rack) => {
-      const zone = String(rack.zone_name || '').trim().toLowerCase();
-      const num = String(rack.rack_number ?? '').trim();
-
-      // เทียบแบบ === เป๊ะทั้งคู่ ไม่ใช้ includes เด็ดขาด
-      return zone === parsed.zoneName && num === parsed.rack;
-    });
-  }, [racks, parsed]);
-
-  const summary = useMemo(() => ({
-    total: filtered.length,
-    on: filtered.filter((r) => r.power_status === 'POWER_ON' || r.power_status === 'on').length,
-    off: filtered.filter((r) => r.power_status === 'OFF' || r.power_status === 'off').length,
-    notInstalled: filtered.filter((r) => r.power_status === 'NOT_INSTALL' || r.power_status === 'NOT_INSTALLED').length
-  }), [filtered]);
-
-
-  const updateStatus = async (rack, newStatus) => {
-    if (!canWrite || rack.status === newStatus) return;
-
-    const prevStatus = rack.status;
-    setRacks((prev) => prev.map((r) => (r.id === rack.id ? { ...r, status: newStatus } : r)));
-
-    try {
-      await api.patch(`/racks/${rack.id}/status`, { status: newStatus });
-      setMessage({ type: 'success', text: `อัปเดต ${rack.name} เป็น "${getRackLabel(newStatus)}" แล้ว` });
-    } catch (err) {
-      setRacks((prev) => prev.map((r) => (r.id === rack.id ? { ...r, status: prevStatus } : r)));
-      setMessage({ type: 'error', text: err.response?.data?.message || 'บันทึกไม่สำเร็จ' });
-    }
-  };
-
-  const bulkUpdate = async (newStatus) => {
-    if (selectedIds.length === 0) {
-      setMessage({ type: 'error', text: 'กรุณาเลือก Rack ก่อน' });
+  /* ───── ชั้นที่ 2: ค้นหา S/N เฉพาะเมื่อกดปุ่มค้นหาแล้ว ───── */
+  useEffect(() => {
+    const raw = query.trim();
+    if (parsed || raw.length < MIN_SERIAL_LENGTH) {
+      setSerialHits([]);
       return;
     }
-    if (!window.confirm(`ยืนยันเปลี่ยน ${selectedIds.length} Rack เป็น "${getRackLabel(newStatus)}"?`)) return;
+
+    const fetchSerial = async () => {
+      try {
+        const res = await api.get(`/rack-devices/search-serial?serial=${encodeURIComponent(raw)}`);
+        const devices = Array.isArray(res.data) ? res.data : [];
+        
+        const hits = devices.map((d) => {
+          const owner = racks.find((r) => String(r.id) === String(d.rack_id));
+          return { device: d, rack: owner || null };
+        }).filter((hit) => hit.rack !== null);
+
+        setSerialHits(hits);
+      } catch (err) {
+        console.error('ค้นหา S/N ไม่สำเร็จ:', err);
+        setSerialHits([]);
+      }
+    };
+
+    fetchSerial();
+  }, [query, parsed, racks]);
+
+  /* ───── ชั้นที่ 3: สรุปว่าจะแสดง Rack ไหนบ้าง (อิงจาก query) ───── */
+  const filtered = useMemo(() => {
+    if (!query.trim()) return [];
+
+    if (parsed) {
+      return racks.filter((rack) => {
+        const zone = getZone(rack).toLowerCase();
+        const num = String(rack.rack_number ?? '').trim();
+        return zone === parsed.zoneName && num === parsed.rack;
+      });
+    }
+
+    if (serialHits.length > 0) {
+      const seen = new Set();
+      return serialHits
+        .map((hit) => hit.rack)
+        .filter((r) => {
+          if (seen.has(r.id)) return false;
+          seen.add(r.id);
+          return true;
+        });
+    }
+
+    return [];
+  }, [racks, parsed, serialHits, query]);
+
+  /* ───── id ของอุปกรณ์ที่ต้องไฮไลต์ ───── */
+  const highlightIds = useMemo(
+    () => serialHits.map((hit) => hit.device.id),
+    [serialHits]
+  );
+
+  /* ───── ป้ายกำกับหัวตู้ ───── */
+  const getLabelFor = (rack) => {
+    if (parsed) return parsed.displayLabel;
+    return `${getZone(rack)} • Rack ${rack.rack_number}`;
+  };
+
+  /* ───── ฟังก์ชันสั่งค้นหา ───── */
+  const handleSearchClick = () => {
+    setQuery(search);
+  };
+
+  /* ───── ฟังก์ชันล้างคำค้นหา ───── */
+  const handleClear = () => {
+    setSearch('');
+    setQuery('');
+    setSerialHits([]);
+  };
+
+  /* ───── เปลี่ยนสถานะ Rack ───── */
+  const handleStatusChange = async (rack, newStatus) => {
+    if (!canWrite) {
+      setMessage({ type: 'error', text: 'บัญชีของคุณไม่มีสิทธิ์แก้ไขข้อมูล' });
+      return;
+    }
 
     setSaving(true);
     try {
-      await api.patch('/racks/bulk-status', { ids: selectedIds, status: newStatus });
+      await api.put(`/racks/${rack.id}`, { status: newStatus });
       setRacks((prev) =>
-        prev.map((r) => (selectedIds.includes(r.id) ? { ...r, status: newStatus } : r))
+        prev.map((r) => (r.id === rack.id ? { ...r, status: newStatus } : r))
       );
-      setMessage({ type: 'success', text: `อัปเดต ${selectedIds.length} Rack เรียบร้อย` });
-      setSelectedIds([]);
-    } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'อัปเดตไม่สำเร็จ' });
+      setMessage({ type: 'success', text: 'อัปเดตสถานะเรียบร้อยแล้ว' });
+    } catch {
+      setMessage({ type: 'error', text: 'อัปเดตสถานะไม่สำเร็จ' });
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleSelect = (id) =>
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-
-  const toggleSelectAll = () =>
-    setSelectedIds(selectedIds.length === filtered.length ? [] : filtered.map((r) => r.id));
-
-  if (!canWrite) {
-    return <div className="no-permission">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</div>;
-  }
+  const isSerialTooShort =
+    !parsed && query.trim().length > 0 && query.trim().length < MIN_SERIAL_LENGTH;
 
   return (
-    <div className="page-container">
-      <div className="page-head">
+    <div className="rackedit">
+      {/* ═══ หัวข้อหน้า ═══ */}
+      <div className="rackedit__head">
         <h1>แก้ไขสถานะ Rack</h1>
-        <button onClick={loadRacks} className="btn-ghost">รีเฟรช</button>
-      </div>
-
-      {message && (
-        <div className={`toast toast--${message.type}`}>{message.text}</div>
-      )}
-
-      <div className="filter-bar">
-        <input
-          type="text"
-          className="rackedit__search"
-          placeholder="พิมพ์รหัสให้ครบ เช่น 01-02-03 หรือ TEL-2-2"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button className="btn-ghost" onClick={() => setSearch('')}>
-          ล้างคำค้นหา
+        <button type="button" className="btn-ghost" onClick={loadRacks}>
+          รีเฟรช
         </button>
       </div>
 
-            {loading ? (
+      {/* ═══ ข้อความแจ้งเตือน ═══ */}
+      {message && (
+        <div className={`rackedit__message rackedit__message--${message.type}`}>
+          {message.text}
+        </div>
+      )}
+
+      {!canWrite && (
+        <div className="rackedit__message rackedit__message--warn">
+          บัญชีนี้เข้าชมได้อย่างเดียว ไม่สามารถแก้ไขข้อมูลได้
+        </div>
+      )}
+
+      {/* ═══ ช่องค้นหาและปุ่มกด ═══ */}
+      <div className="rackedit__searchbar">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSearchClick();
+            }
+          }}
+          placeholder="ค้นหาด้วยรหัส Rack (เช่น 1-11-12) หรือ Serial Number"
+        />
+
+        {query ? (
+          <button type="button" className="btn-ghost" onClick={handleClear}>
+            ล้างคำค้นหา
+          </button>
+        ) : (
+          <button type="button" className="btn-primary" onClick={handleSearchClick}>
+            ค้นหา
+          </button>
+        )}
+      </div>
+
+      {/* ═══ แถบแจ้งผลการค้นหา S/N ═══ */}
+      {!parsed && serialHits.length > 0 && (
+        <div className="serial-result">
+          <span className="serial-result__icon">OK</span>
+          <div>
+            พบ <strong>{serialHits.length}</strong> อุปกรณ์ที่ตรงกับ Serial Number นี้
+            <ul className="serial-result__list">
+              {serialHits.map((hit) => (
+                <li key={hit.device.id}>
+                  <code>{hit.device.serial_number}</code> — {hit.device.model}
+                  {' → '}
+                  <strong>
+                    {getZone(hit.rack)} • Rack {hit.rack.rack_number} • U{hit.device.start_unit}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ ผลลัพธ์ ═══ */}
+      {loading ? (
         <div className="loading-box">กำลังโหลดข้อมูล...</div>
-      ) : !search.trim() ? (
+      ) : !query.trim() ? (
         <div className="loading-box" style={{ color: '#6b7280' }}>
-          กรุณาพิมพ์คำค้นหา Rack ที่ต้องการ (เช่น 01-01-02)
+          กรุณากรอกรหัส Rack หรือ Serial Number แล้วคลิกปุ่ม "ค้นหา"
+        </div>
+      ) : isSerialTooShort ? (
+        <div className="loading-box" style={{ color: '#6b7280' }}>
+          พิมพ์ต่ออีกอย่างน้อย {MIN_SERIAL_LENGTH} ตัวอักษรเพื่อค้นหา Serial Number
         </div>
       ) : filtered.length > 0 ? (
         <div className="rack-face-container">
           {filtered.map((rack) => (
-            <RackFace
-              key={rack.id}
-              rack={rack}
-              displayLabel={parsed?.displayLabel}
-            />
+            <div key={rack.id} className="rack-face-block">
+              {/* แถบเปลี่ยนสถานะของ Rack ตัวนี้ */}
+              <div className="rack-status-bar">
+                <span
+                  className="rack-status-dot"
+                  style={{ background: getRackColor(rack.status) }}
+                />
+                <span className="rack-status-text">
+                  สถานะปัจจุบัน: <strong>{getRackLabel(rack.status)}</strong>
+                </span>
+                <select
+                  className="rack-status-select"
+                  value={rack.status ?? RACK_STATUS_LIST[0]?.value ?? ''}
+                  disabled={!canWrite || saving}
+                  onChange={(e) => handleStatusChange(rack, e.target.value)}
+                >
+                  {RACK_STATUS_LIST.map((s) => (
+                    <option key={s.value ?? s} value={s.value ?? s}>
+                      {s.label ?? getRackLabel(s)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <RackFace
+                rack={rack}
+                displayLabel={getLabelFor(rack)}
+                highlightIds={highlightIds}
+                onDataChanged={loadRacks}
+              />
+            </div>
           ))}
         </div>
       ) : (
