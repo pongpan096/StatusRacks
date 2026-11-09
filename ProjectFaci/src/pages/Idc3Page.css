@@ -1,0 +1,244 @@
+.idc3 {
+  width: 100%;
+  max-width: 1600px;        /* เดิม 1100px */
+  margin: 0 auto;
+  padding: 24px 32px 60px;
+  box-sizing: border-box;
+}
+
+.idc3__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.idc3__head h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    color: #0f172a;
+}
+
+.idc3__count {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #475569;
+    margin-left: 8px;
+}
+
+.idc3__search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border: 1px solid #94a3b8;
+    border-radius: 8px;
+    font-size: 0.92rem;
+}
+
+.idc3__msg {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+}
+
+.idc3__msg--ok {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.idc3__msg--error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.idc3__preview {
+    background: #eff6ff;
+    border: 1px solid #93c5fd;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 18px;
+}
+
+.idc3__preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.idc3__preview-head button {
+    margin-left: 8px;
+}
+
+.idc3__more {
+    font-size: 0.82rem;
+    color: #475569;
+    margin: 8px 0 0;
+}
+
+.idc3__table-wrap {
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overscroll-behavior: contain;
+}
+
+.idc3__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.idc3__table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #334155;
+    color: #fff;
+    text-align: left;
+    padding: 9px 12px;
+    white-space: nowrap;
+}
+
+.idc3__table td {
+    padding: 8px 12px;
+    border-top: 1px solid #e2e8f0;
+    color: #0f172a;
+}
+
+.idc3__table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.idc3__empty {
+    padding: 28px;
+    text-align: center;
+    color: #64748b;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+}
+
+.idc3__table-wrap::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.idc3__table-wrap::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.idc3__table-wrap::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 6px;
+}
+
+.idc3__table-wrap::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+.idc3__count--warn {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    padding: 2px 10px;
+}
+
+.idc3__missing {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.idc3__row--edit {
+    background: #eff6ff;
+}
+
+.idc3__row--edit td {
+    padding: 6px 8px;
+}
+
+.idc3__input {
+    width: 100%;
+    min-width: 90px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid #60a5fa;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: #fff;
+}
+
+.idc3__input--sm {
+    min-width: 60px;
+}
+
+.idc3__input:focus {
+    outline: 2px solid #bfdbfe;
+}
+
+.idc3__actions {
+    white-space: nowrap;
+}
+
+.idc3__actions .mini-btn {
+    margin-right: 6px;
+}
+
+.mini-btn {
+    padding: 5px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.mini-btn:hover {
+    background: #f1f5f9;
+}
+
+.mini-btn--edit {
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.mini-btn--edit:hover {
+    background: #eff6ff;
+}
+
+.mini-btn--save {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+}
+
+.mini-btn--save:hover {
+    background: #15803d;
+}
+
+.mini-btn--del {
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.mini-btn--del:hover {
+    background: #fef2f2;
+}
+
+.mini-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

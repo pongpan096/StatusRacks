@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
-import Floorplan from './pages/Floorplan';   // หรือชื่อไฟล์ Floor Plan ของคุณ
-import RackEdit from './pages/RackEdit';     // ★ 1. นำเข้าหน้า RackEdit ที่เพิ่งสร้าง
+import Floorplan from './pages/Floorplan';
+import RackEdit from './pages/RackEdit';
+import Idc3Page from './pages/Idc3Page';
 
 // ฟังก์ชันเช็กการล็อกอิน
 function PrivateRoute({ children }) {
@@ -19,9 +20,9 @@ export default function App() {
         {/* ครอบทุกหน้าที่มีเมนูด้านบน */}
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
           <Route path="/floorplan" element={<Floorplan />} />
-
-          {/* ★ 2. เพิ่ม Route ตรงนี้ เพื่อให้แสดงผลใน MainLayout */}
           <Route path="/rack-edit" element={<RackEdit />} />
+          <Route path="/idc3-1" element={<Idc3Page site="IDC3-1" />} />
+          <Route path="/idc3-2" element={<Idc3Page site="IDC3-2" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/floorplan" replace />} />

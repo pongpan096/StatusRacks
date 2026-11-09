@@ -3,7 +3,7 @@ import './MenuBarCustom.css';
 
 export default function MenuBar() {
   const navigate = useNavigate();
-  
+
   const rawUser = localStorage.getItem('user');
   const user = rawUser ? JSON.parse(rawUser) : null;
 
@@ -21,15 +21,21 @@ export default function MenuBar() {
       </div>
 
       <nav className="menubar__nav">
-        <NavLink to="/floorplan" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`}>
+        <NavLink to="/floorplan" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`} >
           Floor Plan
         </NavLink>
-        
-        {/* ★ เพิ่มเมนูนี้ เพื่อกดเข้าไปหน้าแก้ไขสถานะ Rack */}
-        <NavLink to="/rack-edit" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`}>
+
+        <NavLink to="/rack-edit" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`} >
           FaceRack
         </NavLink>
 
+        <NavLink to="/idc3-1" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`} >
+          IDC3-1
+        </NavLink>
+
+        <NavLink to="/idc3-2" className={({ isActive }) => `menubar__link ${isActive ? 'menubar__link--active' : ''}`} >
+          IDC3-2
+        </NavLink>
       </nav>
 
       <div className="menubar__right">

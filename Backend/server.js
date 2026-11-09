@@ -29,6 +29,8 @@ app.use('/api/crah', require('./routes/crah'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/audit', require('./routes/audit'));
 app.use('/api/rack-devices', require('./routes/rackDevices'));
+app.use('/api/idc3', require('./routes/idc3'));
+
 
 
 

@@ -50,13 +50,15 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
     loadDevices();
   }, [rack?.id]);
 
+  // ปรับแก้ตรรกะ Map ช่อง U 
+  // ตัวอย่าง: ถ้าเริ่ม U3 และขนาด 2U อุปกรณ์จะกินพื้นที่ U3 และ U2 (โดยช่องบนสุดคือ U3)
   const occupiedMap = {};
   devices.forEach((d) => {
     const size = Number(d.unit_size) || 1;
-    const start = Number(d.start_unit);
+    const start = Number(d.start_unit); // เช่น U3
     for (let i = 0; i < size; i++) {
-      const uNum = start - i;
-      occupiedMap[uNum] = { device: d, isTop: i === 0 };
+      const uNum = start - i; // U3, U2, U1 ... ตามขนาด
+      occupiedMap[uNum] = { device: d, isTop: i === 0, startUnit: start };
     }
   });
 
@@ -84,8 +86,8 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
     setFormData({
       model: d.model || '',
       serial_number: d.serial_number || '',
-      start_unit: d.start_unit || '',
-      unit_size: d.unit_size || '1',
+      start_unit: String(d.start_unit || ''),
+      unit_size: String(d.unit_size || '1'),
       note: d.note || '',
     });
   };
@@ -101,7 +103,6 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
     }
   };
 
-  // ฟังก์ชันเปิด Modal ย้ายอุปกรณ์
   const openMoveModal = (d) => {
     setMovingDevice(d);
     setTargetRackId(String(rack.id));
@@ -110,7 +111,6 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
     loadAllRacksForMove();
   };
 
-  // ฟังก์ชันยืนยันการย้ายอุปกรณ์ไปตู้ใหม่
   const handleConfirmMove = async (e) => {
     e.preventDefault();
     if (!movingDevice || !targetRackId) return;
@@ -159,22 +159,34 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
               value={formData.serial_number}
               onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
             />
+            
+            {/* ช่องกรอกตำแหน่ง U แบบพิมพ์อิสระ ไม่มีลูกศร */}
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="ตำแหน่งเริ่มต้น (U) *"
-              min="1"
-              max="42"
               value={formData.start_unit}
-              onChange={(e) => setFormData({ ...formData, start_unit: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val === '' || (Number(val) >= 1 && Number(val) <= 42)) {
+                  setFormData({ ...formData, start_unit: val });
+                }
+              }}
               required
             />
+
+            {/* ช่องกรอกขนาด U แบบพิมพ์อิสระ ไม่มีลูกศร */}
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
               placeholder="ขนาด (กี่ U) *"
-              min="1"
-              max="42"
               value={formData.unit_size}
-              onChange={(e) => setFormData({ ...formData, unit_size: e.target.value })}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                if (val === '' || (Number(val) >= 1 && Number(val) <= 42)) {
+                  setFormData({ ...formData, unit_size: val });
+                }
+              }}
               required
             />
           </div>
@@ -217,18 +229,30 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
               </div>
             );
           }
-          if (!cell.isTop) return null;
 
+          // ถ้าไม่ใช่ช่องบนสุด (isTop) ให้แสดงเป็นช่องย่อยที่ถูกครอบครองต่อเนื่องลงมา
           const d = cell.device;
           const size = Number(d.unit_size) || 1;
-          const start = Number(d.start_unit) || u;
+          const start = cell.startUnit;
           const isHit = highlightIds.includes(d.id);
 
+          if (!cell.isTop) {
+            return (
+              <div key={u} className={`unit-row unit-row--multi-sub${isHit ? ' unit-row--hit' : ''}`} style={{ height: '38px' }}>
+                <span className="unit-no">U{u}</span>
+                <span className="unit-empty-text" style={{ color: '#64748b' }}>
+                  ↳ ต่อเนื่องจากอุปกรณ์: <strong>{d.model}</strong> (U{start} - U{start - size + 1})
+                </span>
+              </div>
+            );
+          }
+
+          // แสดงผลเฉพาะที่ช่องบนสุด (isTop) โดยจะครอบคลุมพื้นที่ความสูงตามขนาด U จริง
           return (
             <div
               key={u}
               className={`unit-row unit-row--multi${isHit ? ' unit-row--hit' : ''}`}
-              style={{ height: `${size * 40 + (size - 1) * 4}px` }}
+              style={{ height: `${size * 38 + (size - 1) * 4}px` }}
             >
               <span className="unit-no">U{u}</span>
 
@@ -238,7 +262,7 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
                   {isHit && <span className="hit-badge">ตรงกับที่ค้นหา</span>}
                 </strong>
                 <small>
-                  S/N: {d.serial_number || '-'} • ขนาด {size}U
+                  S/N: {d.serial_number || '-'} • ขนาด {size}U (ช่วง U{start} ถึง U{start - size + 1})
                   {d.note ? ` • ${d.note}` : ''}
                 </small>
               </div>
@@ -263,9 +287,7 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
         })}
       </div>
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* Modal ย้ายตู้ (เขียนแบบบังคับแสดงผลทับหน้าจอทันที) */}
-      {/* ═══════════════════════════════════════════════ */}
+      {/* Modal ย้ายตู้ */}
       {movingDevice && (
         <div style={{
           position: 'fixed',
@@ -329,13 +351,12 @@ export default function RackFace({ rack, displayLabel, highlightIds = [], onData
                   inputMode="numeric"
                   value={targetStartUnit}
                   onChange={(e) => {
-                    // อนุญาตให้พิมพ์เฉพาะตัวเลข และจำกัดค่าไม่ให้เกิน 42 หรือปล่อยว่างได้
                     const val = e.target.value.replace(/\D/g, '');
                     if (val === '' || (Number(val) >= 1 && Number(val) <= 42)) {
                       setTargetStartUnit(val);
                     }
                   }}
-                  placeholder="พิมพ์เลข Unit เช่น 14"
+                  placeholder="พิมพ์เลข Unit เช่น 3"
                   style={{ width: '100%', padding: '10px 12px', border: '1px solid #94a3b8', borderRadius: '8px', fontSize: '0.92rem', background: '#fff', boxSizing: 'border-box' }}
                   required
                 />
