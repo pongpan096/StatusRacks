@@ -6,7 +6,9 @@ export default function MainLayout() {
     <>
       <MenuBar />
       <main style={{ padding: '20px' }}>
-        <Outlet />
+        <div className="page-panel">
+          <Outlet />
+        </div>
       </main>
     </>
   );

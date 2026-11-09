@@ -15,30 +15,57 @@ function getZone(rack) {
 }
 
 /**
- * รองรับการพิมพ์รูปแบบ: 1-11-12 (หมายถึง Zone 1, Row 11, Rack 12)
- * หรือพิมพ์เต็มๆ เช่น Zone 1 Row 11
+ * ป้ายชื่อตู้แบบอ่านง่าย
+ *  - Zone 1 Row 9  → Zone 1 • Row 9 • Rack 1
+ *  - NET-1 / TEL-2 → NET-1 • Rack 6
+ */
+function formatRackLabel(rack) {
+  const zone = getZone(rack);
+  const num = rack?.rack_number;
+  const m = zone.match(/zone\s*(\d+)\s*row\s*(\d+)/i);
+  if (m) return `Zone ${Number(m[1])} • Row ${Number(m[2])} • Rack ${num}`;
+  return `${zone.toUpperCase()} • Rack ${num}`;
+}
+
+/**
+ * ถอดรหัสคำค้นหาเป็นตำแหน่งตู้
+ * รองรับ:
+ *  - 1-9-1, 01-09-01, 1/9/1, 1 9 1  → Zone 1 Row 9 Rack 1
+ *  - 1-9                            → ทุกตู้ใน Zone 1 Row 9
+ *  - N1-R6, N1-6, N1R6, NET1-6, NET-1-R6 → NET-1 Rack 6
+ *  - T2-R3, TEL2-3, TEL-2-3, t2r3   → TEL-2 Rack 3
+ *  - N1, NET-2, T1, TEL2            → ทุกตู้ในโซนนั้น
+ * คืนค่า null ถ้าไม่ใช่รูปแบบ Location (จะไปค้นหาเป็น Serial Number แทน)
  */
 function parseRackCode(input) {
-  const raw = String(input || '').trim();
+  const raw = String(input || '').trim().toUpperCase();
   if (!raw) return null;
 
-  const parts = raw.split(/[-_\s]+/).filter(Boolean);
-  
-  if (parts.length === 3) {
-    const [p1, p2, p3] = parts;
-    if (/^\d+$/.test(p1) && /^\d+$/.test(p2) && /^\d+$/.test(p3)) {
-      const zoneNum = Number(p1);
-      const rowNum = Number(p2);
-      const rackNum = String(Number(p3));
+  // 1) แบบตัวเลข Zone-Row-Rack หรือ Zone-Row
+  const parts = raw.split(/[-_/\s]+/).filter(Boolean);
+  if ((parts.length === 3 || parts.length === 2) && parts.every((p) => /^\d+$/.test(p))) {
+    const zoneNum = Number(parts[0]);
+    const rowNum = Number(parts[1]);
+    const rackNum = parts[2] !== undefined ? String(Number(parts[2])) : null;
+    return {
+      zoneName: `zone ${zoneNum} row ${rowNum}`,
+      rack: rackNum,
+      displayLabel: rackNum ? `Zone ${zoneNum} • Row ${rowNum} • Rack ${rackNum}` : null,
+    };
+  }
 
-      const targetZoneName = `Zone ${zoneNum} Row ${rowNum}`.toLowerCase();
-
-      return {
-        zoneName: targetZoneName,
-        rack: rackNum,
-        displayLabel: `Zone ${zoneNum} • Row ${rowNum} • Rack ${rackNum}`,
-      };
-    }
+  // 2) แบบ NET / TEL
+  const compact = raw.replace(/\s+/g, '');
+  const m = compact.match(/^(NET|N|TEL|T)[-_]?(\d{1,2})(?:[-_]?R?(\d{1,3}))?$/);
+  if (m) {
+    const type = m[1].startsWith('N') ? 'NET' : 'TEL';
+    const num = Number(m[2]);
+    const rackNum = m[3] ? String(Number(m[3])) : null;
+    return {
+      zoneName: `${type}-${num}`.toLowerCase(),
+      rack: rackNum,
+      displayLabel: rackNum ? `${type}-${num} • Rack ${rackNum}` : null,
+    };
   }
 
   return null;
@@ -46,17 +73,17 @@ function parseRackCode(input) {
 
 /* ═══════════════ คอมโพเนนต์หลัก ═══════════════ */
 
-export default function RackEdit() {
+export default function RackEdit({ site = 'IDC3-1' }) {
   const { canWrite } = useAuth();
 
   const [racks, setRacks] = useState([]);
-  const [serialHits, setSerialHits] = useState([]); 
+  const [serialHits, setSerialHits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  
-  const [search, setSearch] = useState('');   // ค่าที่พิมพ์ในช่อง input
-  const [query, setQuery] = useState('');     // ค่าจริงที่จะใช้ค้นหา (อัปเดตเมื่อกดปุ่มหรือกด Enter)
+
+  const [search, setSearch] = useState(''); // ค่าที่พิมพ์ในช่อง input
+  const [query, setQuery] = useState('');   // ค่าจริงที่ใช้ค้นหา (อัปเดตเมื่อกดปุ่มหรือ Enter)
 
   /* ───── โหลดข้อมูล Rack ทั้งหมด ───── */
   const loadRacks = async () => {
@@ -72,9 +99,15 @@ export default function RackEdit() {
     }
   };
 
+  // โหลดใหม่และล้างคำค้นหาทุกครั้งที่สลับ FaceRack 3-1 ↔ 3-2
   useEffect(() => {
+    setSearch('');
+    setQuery('');
+    setSerialHits([]);
+    setMessage(null);
     loadRacks();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site]);
 
   // ข้อความแจ้งเตือนหายเองใน 3 วินาที
   useEffect(() => {
@@ -83,10 +116,10 @@ export default function RackEdit() {
     return () => clearTimeout(t);
   }, [message]);
 
-  /* ───── ชั้นที่ 1: ถอดรหัสจากคำค้นหาที่กดปุ่มแล้ว ───── */
+  /* ───── ชั้นที่ 1: ถอดรหัสจากคำค้นหา ───── */
   const parsed = useMemo(() => parseRackCode(query), [query]);
 
-  /* ───── ชั้นที่ 2: ค้นหา S/N เฉพาะเมื่อกดปุ่มค้นหาแล้ว ───── */
+  /* ───── ชั้นที่ 2: ค้นหา S/N (เฉพาะเมื่อไม่ใช่รูปแบบ Location) ───── */
   useEffect(() => {
     const raw = query.trim();
     if (parsed || raw.length < MIN_SERIAL_LENGTH) {
@@ -98,11 +131,13 @@ export default function RackEdit() {
       try {
         const res = await api.get(`/rack-devices/search-serial?serial=${encodeURIComponent(raw)}`);
         const devices = Array.isArray(res.data) ? res.data : [];
-        
-        const hits = devices.map((d) => {
-          const owner = racks.find((r) => String(r.id) === String(d.rack_id));
-          return { device: d, rack: owner || null };
-        }).filter((hit) => hit.rack !== null);
+
+        const hits = devices
+          .map((d) => {
+            const owner = racks.find((r) => String(r.id) === String(d.rack_id));
+            return { device: d, rack: owner || null };
+          })
+          .filter((hit) => hit.rack !== null);
 
         setSerialHits(hits);
       } catch (err) {
@@ -114,16 +149,18 @@ export default function RackEdit() {
     fetchSerial();
   }, [query, parsed, racks]);
 
-  /* ───── ชั้นที่ 3: สรุปว่าจะแสดง Rack ไหนบ้าง (อิงจาก query) ───── */
+  /* ───── ชั้นที่ 3: สรุปว่าจะแสดง Rack ไหนบ้าง ───── */
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
 
     if (parsed) {
-      return racks.filter((rack) => {
-        const zone = getZone(rack).toLowerCase();
-        const num = String(rack.rack_number ?? '').trim();
-        return zone === parsed.zoneName && num === parsed.rack;
-      });
+      return racks
+        .filter((rack) => {
+          const zone = getZone(rack).toLowerCase().replace(/\s+/g, ' ');
+          const num = String(rack.rack_number ?? '').trim();
+          return zone === parsed.zoneName && (parsed.rack === null || num === parsed.rack);
+        })
+        .sort((a, b) => Number(a.rack_number) - Number(b.rack_number));
     }
 
     if (serialHits.length > 0) {
@@ -148,16 +185,15 @@ export default function RackEdit() {
 
   /* ───── ป้ายกำกับหัวตู้ ───── */
   const getLabelFor = (rack) => {
-    if (parsed) return parsed.displayLabel;
-    return `${getZone(rack)} • Rack ${rack.rack_number}`;
+    if (parsed?.displayLabel) return parsed.displayLabel;
+    return formatRackLabel(rack);
   };
 
-  /* ───── ฟังก์ชันสั่งค้นหา ───── */
+  /* ───── สั่งค้นหา / ล้างคำค้นหา ───── */
   const handleSearchClick = () => {
     setQuery(search);
   };
 
-  /* ───── ฟังก์ชันล้างคำค้นหา ───── */
   const handleClear = () => {
     setSearch('');
     setQuery('');
@@ -192,7 +228,7 @@ export default function RackEdit() {
     <div className="rackedit">
       {/* ═══ หัวข้อหน้า ═══ */}
       <div className="rackedit__head">
-        <h1>แก้ไขสถานะ Rack</h1>
+        <h1>แก้ไขสถานะ Rack ({site})</h1>
         <button type="button" className="btn-ghost" onClick={loadRacks}>
           รีเฟรช
         </button>
@@ -218,11 +254,9 @@ export default function RackEdit() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSearchClick();
-            }
+            if (e.key === 'Enter') handleSearchClick();
           }}
-          placeholder="ค้นหาด้วยรหัส Rack (เช่น 1-11-12) หรือ Serial Number"
+          placeholder="ค้นหารหัส Rack (เช่น 1-11-12, N1-R6, TEL2-3, N1) หรือ Serial Number"
         />
 
         {query ? (
@@ -248,7 +282,7 @@ export default function RackEdit() {
                   <code>{hit.device.serial_number}</code> — {hit.device.model}
                   {' → '}
                   <strong>
-                    {getZone(hit.rack)} • Rack {hit.rack.rack_number} • U{hit.device.start_unit}
+                    {formatRackLabel(hit.rack)} • U{hit.device.start_unit}
                   </strong>
                 </li>
               ))}

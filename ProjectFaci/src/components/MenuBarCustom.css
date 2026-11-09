@@ -1,58 +1,192 @@
-/* ===== Menu Bar ===== */
+/* ═══════════ แถบเมนูหลัก ═══════════ */
 .menubar {
   position: sticky;
   top: 0;
-  z-index: 900;
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 16px;
+  height: 60px;
   padding: 0 24px;
-  height: 58px;
   background: #1e293b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  overflow: visible;
 }
 
-.menubar__brand { display: flex; align-items: center; gap: 10px; }
+/* ═══════════ โลโก้ ═══════════ */
+.menubar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
 
 .menubar__logo {
-  width: 32px; height: 32px;
-  background: #3b82f6; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 8px; font-weight: 800; font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
-.menubar__title { color: #fff; font-size: 15px; font-weight: 700; white-space: nowrap; }
-
-.menubar__nav { display: flex; gap: 4px; flex: 1; }
-
-.menubar__link {
-  color: #cbd5e1;
-  text-decoration: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s ease;
+.menubar__title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
   white-space: nowrap;
 }
 
-.menubar__link:hover { background: #334155; color: #fff; }
+/* ═══════════ กลุ่มเมนู ═══════════ */
+.menubar__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
 
-.menubar__link--active {
+.menubar__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menubar__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.menubar__link--active,
+.menubar__link--active:hover {
   background: #3b82f6;
   color: #fff;
   font-weight: 600;
 }
 
-.menubar__right { display: flex; align-items: center; gap: 14px; }
+/* ═══════════ Dropdown ═══════════ */
+.menubar__dropdown {
+  position: relative;
+  display: inline-flex;
+}
 
-.menubar__user { display: flex; align-items: center; gap: 8px; }
-.menubar__username { color: #e2e8f0; font-size: 13px; }
+.menubar__dropdown-toggle {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
+.menubar__dropdown-toggle:not(.menubar__link--active) {
+  background: transparent;
+  color: #cbd5e1;
+}
+
+.menubar__caret {
+  font-size: 0.75em;
+  transition: transform 0.2s ease;
+  opacity: 0.8;
+}
+
+.menubar__caret--open {
+  transform: rotate(180deg);
+}
+
+/* กล่องเมนูย่อย */
+.menubar__dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px); /* เว้นระยะห่างจากแถบเมนูด้านบนเล็กน้อย */
+  left: 0;
+  min-width: 210px;
+  z-index: 1000;
+}
+
+.menubar__dropdown-panel {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  animation: menubar-fade 0.15s ease;
+}
+
+.menubar__dropdown-item {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 6px;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menubar__dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.menubar__dropdown-item--active,
+.menubar__dropdown-item--active:hover {
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+}
+
+@keyframes menubar-fade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════ ปุ่มออกจากระบบ ═══════════ */
 .menubar__logout {
-  background: #ef4444; color: #fff; border: none;
-  padding: 7px 14px; border-radius: 7px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
   transition: background 0.15s ease;
 }
-.menubar__logout:hover { background: #dc2626; }
+
+.menubar__logout:hover {
+  background: #dc2626;
+}
+
+/* ═══════════ หน้าจอเล็ก ═══════════ */
+@media (max-width: 768px) {
+  .menubar {
+    gap: 10px;
+    padding: 0 12px;
+  }
+
+  .menubar__title {
+    display: none;
+  }
+
+  .menubar__link,
+  .menubar__dropdown-toggle {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+}

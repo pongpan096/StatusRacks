@@ -15,7 +15,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<div className="login-bg"> <Login /> </div>} />
 
         {/* ครอบทุกหน้าที่มีเมนูด้านบน */}
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
@@ -23,6 +23,9 @@ export default function App() {
           <Route path="/rack-edit" element={<RackEdit />} />
           <Route path="/idc3-1" element={<Idc3Page site="IDC3-1" />} />
           <Route path="/idc3-2" element={<Idc3Page site="IDC3-2" />} />
+          <Route path="/facerack-1" element={<RackEdit site="IDC3-1" />} />
+          <Route path="/facerack-2" element={<RackEdit site="IDC3-2" />} />
+
         </Route>
 
         <Route path="*" element={<Navigate to="/floorplan" replace />} />

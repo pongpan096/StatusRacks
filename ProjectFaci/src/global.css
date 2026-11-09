@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  background-color: #0f172a;   /* สีสำรองระหว่างภาพกำลังโหลด */
+}
+
+/* ═════════ พื้นหลังหน้า Login ═════════ */
+.login-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.70)),
+    url('/images/datacenter-bg.jpg') center / cover no-repeat;
+  background-attachment: fixed;
+}
+
+/* ทำให้พื้นหลังเดิมของหน้า Login (สีเทาอ่อน) โปร่งใส เพื่อให้เห็นภาพ */
+.login-bg > * {
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+/* ═════════ พื้นหลังหน้าอื่น ๆ หลังล็อกอิน ═════════ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.60)),
+    url('/images/datacenter-bg.jpg') center / cover no-repeat;
+}
+
+.page-panel {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 8px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}

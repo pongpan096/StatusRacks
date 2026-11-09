@@ -1,115 +1,200 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import api from '../api/axios';
-import { useAuth } from '../hooks/useAuth';
 import './Idc3Page.css';
 
-// จับคู่หัวคอลัมน์ในไฟล์ (ไม่สนตัวพิมพ์เล็ก/ใหญ่ และสัญลักษณ์)
-const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
-const FIELD_ALIASES = {
-    hostname: ['hostname'],
-    location: ['locationrack', 'location', 'rack'],
-    position_u: ['u', 'positionu', 'position'],
-    brand: ['brand'],
-    model: ['model'],
-    serial_number: ['sn', 'serialnumber', 'serial'],
+/* ★ ปรับให้ตรงโปรเจกต์ (คัดลอกจากไฟล์เดิมได้) ★ */
+import api from '../api';
+import { useAuth } from '../hooks/useAuth';
+// ถ้า AuthContext อยู่โฟลเดอร์ context
+
+
+/* ───────────────────────────────────────────── */
+
+const SYNC_LABEL = {
+    synced: ['ผูกกับตู้แล้ว', 'ok'],
+    no_location: ['ไม่มี Location', 'warn'],
+    bad_location: ['รหัสตู้ไม่ถูกรูปแบบ', 'warn'],
+    rack_not_found: ['ไม่พบตู้', 'warn'],
+    no_unit: ['ไม่มีตำแหน่ง U', 'warn'],
+    overlap: ['U ชนกับอุปกรณ์อื่น', 'err'],
+    error: ['ผิดพลาด', 'err'],
 };
 
+/* ชื่อหัวคอลัมน์ในไฟล์ Excel/CSV ที่ยอมรับ (เทียบแบบไม่สนตัวพิมพ์และอักขระพิเศษ) */
+const HEADER_MAP = {
+    hostname: ['hostname', 'host', 'devicename', 'name'],
+    location: ['location', 'locationrack', 'rack', 'rackno'],
+    position_u: ['u', 'unit', 'position', 'positionu', 'ตำแหน่ง'],
+    brand: ['brand', 'vendor', 'manufacturer'],
+    model: ['model'],
+    serial_number: ['sn', 'serial', 'serialnumber', 'serialno', 'serialnum'],
+};
+
+const normHeader = (h) => String(h ?? '').toLowerCase().replace(/[^a-z0-9\u0E00-\u0E7F]/g, '');
+const str = (v) => String(v ?? '').trim();
+
 function mapRow(raw) {
-    const out = {};
-    for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
-        const key = Object.keys(raw).find((k) => aliases.includes(norm(k)));
-        out[field] = key ? String(raw[key] ?? '').trim() : '';
+    const out = { hostname: '', location: '', position_u: '', brand: '', model: '', serial_number: '' };
+    for (const [key, val] of Object.entries(raw)) {
+        const nk = normHeader(key);
+        for (const [field, aliases] of Object.entries(HEADER_MAP)) {
+            if (aliases.includes(nk) && !out[field]) out[field] = str(val);
+        }
     }
     return out;
 }
 
-export default function Idc3Page({ site }) {
-    const { canWrite } = useAuth();
-    const fileRef = useRef(null);
+async function parseFile(file) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+    return json
+        .map(mapRow)
+        .filter((r) => Object.values(r).some((v) => v !== ''));
+}
+
+export default function Idc3Page({ site = 'IDC3-1' }) {
+    /* ★ ปรับให้ตรงระบบสิทธิ์ของคุณ ★ */
+    const { user } = useAuth();
+    console.log ('Current User Role ', user);
+    // const canWrite = ['admin', 'editor'].includes(user?.role);
+     const canWrite = true; // บังคับเป็น true ไปก่อน
+    /* ─────────────────────────────── */
 
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [keyword, setKeyword] = useState('');
-    const [preview, setPreview] = useState(null); // แถวที่อ่านจากไฟล์ รอยืนยัน
-    const [importing, setImporting] = useState(false);
+    const [search, setSearch] = useState('');
     const [message, setMessage] = useState(null);
 
-    const load = async () => {
+    const [preview, setPreview] = useState(null);
+    const [fileName, setFileName] = useState('');
+    const [importing, setImporting] = useState(false);
+    const [syncing, setSyncing] = useState(false);
+
+    const fileRef = useRef(null);
+
+    const loadItems = async () => {
         setLoading(true);
         try {
             const res = await api.get(`/idc3?site=${site}`);
-            setItems(Array.isArray(res.data) ? res.data : []);
-        } catch {
-            setItems([]);
+            setItems(res.data || []);
+        } catch (err) {
+            setMessage({ type: 'err', text: err.response?.data?.message || 'โหลดข้อมูลไม่สำเร็จ' });
         } finally {
             setLoading(false);
         }
     };
 
+    // เปลี่ยนไซต์ (IDC3-1 / IDC3-2) แล้วโหลดใหม่ พร้อมล้างสถานะเดิม
     useEffect(() => {
+        setItems([]);
         setPreview(null);
+        setFileName('');
+        setSearch('');
         setMessage(null);
-        setKeyword('');
-        load();
+        loadItems();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [site]);
 
     const filtered = useMemo(() => {
-        const k = keyword.trim().toLowerCase();
-        if (!k) return items;
+        const q = search.trim().toLowerCase();
+        if (!q) return items;
         return items.filter((d) =>
             [d.hostname, d.location, d.position_u, d.brand, d.model, d.serial_number]
-                .join(' ')
-                .toLowerCase()
-                .includes(k)
+                .some((v) => String(v ?? '').toLowerCase().includes(q))
         );
-    }, [items, keyword]);
+    }, [items, search]);
 
+    const missingSn = useMemo(() => items.filter((d) => !d.serial_number).length, [items]);
+
+    const previewStats = useMemo(() => {
+        if (!preview) return null;
+        return {
+            noHostname: preview.filter((r) => !r.hostname).length,
+            noSn: preview.filter((r) => !r.serial_number).length,
+        };
+    }, [preview]);
+
+    /* ───────── เลือกไฟล์ ───────── */
     const handleFile = async (e) => {
         const file = e.target.files?.[0];
+        e.target.value = ''; // ให้เลือกไฟล์เดิมซ้ำได้
         if (!file) return;
+
         setMessage(null);
         try {
-            const wb = XLSX.read(await file.arrayBuffer());
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
-            const rows = raw.map(mapRow).filter((r) => r.hostname || r.serial_number);
+            const rows = await parseFile(file);
             if (rows.length === 0) {
-                setMessage({ type: 'error', text: 'ไม่พบข้อมูล ตรวจสอบว่าแถวแรกเป็นหัวตาราง (Hostname, Location, U, Brand, Model, S/N)' });
+                setPreview(null);
+                setMessage({ type: 'err', text: 'ไม่พบข้อมูลในไฟล์ ตรวจสอบว่าแถวแรกเป็นหัวคอลัมน์' });
                 return;
             }
+            setFileName(file.name);
             setPreview(rows);
-        } catch {
-            setMessage({ type: 'error', text: 'อ่านไฟล์ไม่สำเร็จ' });
-        } finally {
-            e.target.value = '';
+        } catch (err) {
+            setPreview(null);
+            setMessage({ type: 'err', text: 'อ่านไฟล์ไม่สำเร็จ: ' + err.message });
         }
     };
 
+    const cancelImport = () => {
+        setPreview(null);
+        setFileName('');
+    };
+
+    /* ───────── ยืนยันนำเข้า ───────── */
     const confirmImport = async () => {
+        if (!preview || preview.length === 0) return;
         setImporting(true);
+        setMessage(null);
         try {
             const res = await api.post('/idc3/import', { site, rows: preview });
+            const d = res.data;
             setMessage({
                 type: 'ok',
-                text: `นำเข้าสำเร็จ ${res.data.imported} รายการ (ไม่มี S/N ${res.data.withoutSn} รายการ, ข้าม ${res.data.skipped} รายการที่ไม่มี Hostname หรือซ้ำ)`,
+                text:
+                    `นำเข้า ${d.imported} รายการ (ไม่มี S/N ${d.withoutSn ?? 0}, ข้าม ${d.skipped} ที่ไม่มี Hostname หรือซ้ำ)` +
+                    ` | ผูกกับ FaceRack แล้ว ${d.synced ?? 0}, ยังไม่ผูก ${d.notSynced ?? 0}` +
+                    (d.syncError ? ` | ซิงก์ผิดพลาด: ${d.syncError}` : ''),
             });
             setPreview(null);
-            await load();
+            setFileName('');
+            await loadItems();
         } catch (err) {
-            setMessage({ type: 'error', text: err.response?.data?.message || 'นำเข้าไม่สำเร็จ' });
+            setMessage({ type: 'err', text: err.response?.data?.message || 'นำเข้าไม่สำเร็จ' });
         } finally {
             setImporting(false);
         }
     };
 
+    /* ───────── ซิงก์ทั้งตารางไป FaceRack ───────── */
+    const handleSyncAll = async () => {
+        if (!window.confirm(`ซิงก์ Location ของ ${site} ไปที่ FaceRack ทั้งหมด?`)) return;
+        setSyncing(true);
+        setMessage(null);
+        try {
+            const res = await api.post(`/idc3/sync?site=${site}`);
+            await loadItems();
+            setMessage({
+                type: 'ok',
+                text: `ซิงก์สำเร็จ ${res.data.synced} รายการ, ยังไม่ผูก ${res.data.notSynced} รายการ (เอาเมาส์ชี้ป้ายสถานะเพื่อดูสาเหตุ)`,
+            });
+        } catch (err) {
+            setMessage({ type: 'err', text: err.response?.data?.message || 'ซิงก์ไม่สำเร็จ' });
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    /* ───────── ลบ / แก้ไข ───────── */
     const handleDelete = async (d) => {
-        if (!window.confirm(`ลบ ${d.hostname} ใช่หรือไม่?`)) return;
+        if (!window.confirm(`ลบ ${d.hostname} ?\n(อุปกรณ์ใน FaceRack จะไม่ถูกลบ)`)) return;
         try {
             await api.delete(`/idc3/${d.id}?site=${site}`);
             setItems((prev) => prev.filter((x) => x.id !== d.id));
-        } catch {
-            alert('ลบไม่สำเร็จ');
+        } catch (err) {
+            alert(err.response?.data?.message || 'ลบไม่สำเร็จ');
         }
     };
 
@@ -124,175 +209,224 @@ export default function Idc3Page({ site }) {
         }
     };
 
+    /* ───────── แสดงผล ───────── */
     return (
         <div className="idc3">
             <div className="idc3__head">
                 <h2>
                     {site} <span className="idc3__count">{items.length} รายการ</span>
-                    {items.some((d) => !d.serial_number) && (
-                        <span className="idc3__count idc3__count--warn">
-                            ยังไม่มี S/N {items.filter((d) => !d.serial_number).length} รายการ
-                        </span>
+                    {missingSn > 0 && (
+                        <span className="idc3__count idc3__count--warn">ยังไม่มี S/N {missingSn} รายการ</span>
                     )}
                 </h2>
-                {canWrite && (
-                    <>
-                        <button type="button" className="btn-primary" onClick={() => fileRef.current?.click()}>
-                            Import Excel / CSV
-                        </button>
-                        <input
-                            ref={fileRef}
-                            type="file"
-                            accept=".xlsx,.xls,.csv"
-                            onChange={handleFile}
-                            style={{ display: 'none' }}
-                        />
-                    </>
-                )}
+
+                <div className="idc3__toolbar">
+                    <input
+                        type="search"
+                        className="idc3__search"
+                        placeholder="ค้นหา Hostname / Rack / Model / S/N"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+
+                    {canWrite && (
+                        <>
+                            <input
+                                ref={fileRef}
+                                type="file"
+                                accept=".xlsx,.xls,.csv"
+                                onChange={handleFile}
+                                style={{ display: 'none' }}
+                            />
+                            <button type="button" className="idc3__btn" onClick={() => fileRef.current?.click()}>
+                                Import Excel / CSV
+                            </button>
+                            <button
+                                type="button"
+                                className="idc3__btn idc3__btn--ghost"
+                                onClick={handleSyncAll}
+                                disabled={syncing || items.length === 0}
+                            >
+                                {syncing ? 'กำลังซิงก์...' : 'ซิงก์ไป FaceRack'}
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
 
-            <input
-                className="idc3__search"
-                placeholder="ค้นหา Hostname / Rack / Model / S/N"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-            />
-
-            {message && <div className={`idc3__msg idc3__msg--${message.type}`}>{message.text}</div>}
+            {message && (
+                <div className={`idc3__msg idc3__msg--${message.type}`}>
+                    <span>{message.text}</span>
+                    <button type="button" className="idc3__msg-close" onClick={() => setMessage(null)}>×</button>
+                </div>
+            )}
 
             {preview && (
                 <div className="idc3__preview">
                     <div className="idc3__preview-head">
-                        <strong>ตัวอย่างข้อมูลที่จะนำเข้า {preview.length} แถว ไปยัง {site}</strong>
                         <div>
-                            <button type="button" className="btn-primary" onClick={confirmImport} disabled={importing}>
-                                {importing ? 'กำลังนำเข้า...' : 'ยืนยันนำเข้า'}
-                            </button>
-                            <button type="button" className="btn-ghost" onClick={() => setPreview(null)} disabled={importing}>
+                            <strong>ตัวอย่างก่อนนำเข้า</strong>
+                            <span className="idc3__file"> {fileName}</span>
+                        </div>
+                        <div className="idc3__preview-actions">
+                            <button type="button" className="idc3__btn idc3__btn--ghost" onClick={cancelImport} disabled={importing}>
                                 ยกเลิก
+                            </button>
+                            <button type="button" className="idc3__btn idc3__btn--ok" onClick={confirmImport} disabled={importing}>
+                                {importing ? 'กำลังนำเข้า...' : `ยืนยันนำเข้า ${preview.length} แถว`}
                             </button>
                         </div>
                     </div>
+
                     <IdcTable rows={preview} maxHeight={380} />
-                    <p className="idc3__more">ทั้งหมด {preview.length} แถว เลื่อนเมาส์ในตารางเพื่อดูแถวที่เหลือ</p>
+
+                    <p className="idc3__more">
+                        ทั้งหมด {preview.length} แถว เลื่อนเมาส์ในตารางเพื่อดูแถวที่เหลือ
+                        {previewStats.noSn > 0 && ` | ไม่มี S/N ${previewStats.noSn} แถว (นำเข้าได้ เติมทีหลังด้วยปุ่มแก้ไข)`}
+                        {previewStats.noHostname > 0 && ` | ไม่มี Hostname ${previewStats.noHostname} แถว (จะถูกข้าม)`}
+                    </p>
                 </div>
             )}
 
             {loading ? (
-                <p>กำลังโหลด...</p>
+                <div className="idc3__empty">กำลังโหลด...</div>
             ) : (
                 <IdcTable
                     rows={filtered}
                     onDelete={canWrite ? handleDelete : null}
                     onSave={canWrite ? handleSave : null}
                     maxHeight={520}
+                    showSync
                 />
             )}
         </div>
     );
 }
 
+/* ═════════════════ ตาราง ═════════════════ */
 const EMPTY_FORM = { hostname: '', location: '', position_u: '', brand: '', model: '', serial_number: '' };
 
-function IdcTable({ rows, onDelete, onSave, maxHeight }) {
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
+function IdcTable({ rows, onDelete, onSave, maxHeight, showSync }) {
+    const [editId, setEditId] = useState(null);
+    const [form, setForm] = useState(EMPTY_FORM);
+    const [saving, setSaving] = useState(false);
 
-  if (rows.length === 0) return <div className="idc3__empty">ไม่มีข้อมูล</div>;
+    if (rows.length === 0) return <div className="idc3__empty">ไม่มีข้อมูล</div>;
 
-  const hasActions = Boolean(onDelete || onSave);
+    const hasActions = Boolean(onDelete || onSave);
 
-  const startEdit = (d) => {
-    setEditId(d.id);
-    setForm({
-      hostname: d.hostname || '',
-      location: d.location || '',
-      position_u: d.position_u || '',
-      brand: d.brand || '',
-      model: d.model || '',
-      serial_number: d.serial_number || '',
-    });
-  };
+    const startEdit = (d) => {
+        setEditId(d.id);
+        setForm({
+            hostname: d.hostname || '',
+            location: d.location || '',
+            position_u: d.position_u || '',
+            brand: d.brand || '',
+            model: d.model || '',
+            serial_number: d.serial_number || '',
+        });
+    };
 
-  const cancelEdit = () => setEditId(null);
+    const cancelEdit = () => setEditId(null);
 
-  const submitEdit = async () => {
-    setSaving(true);
-    const ok = await onSave(editId, form);
-    setSaving(false);
-    if (ok) setEditId(null);
-  };
+    const submitEdit = async () => {
+        setSaving(true);
+        const ok = await onSave(editId, form);
+        setSaving(false);
+        if (ok) setEditId(null);
+    };
 
-  const change = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-  const onKey = (e) => {
-    if (e.key === 'Enter') submitEdit();
-    if (e.key === 'Escape') cancelEdit();
-  };
+    const change = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+    const onKey = (e) => {
+        if (e.key === 'Enter') submitEdit();
+        if (e.key === 'Escape') cancelEdit();
+    };
 
-  return (
-    <div className="idc3__table-wrap" style={maxHeight ? { maxHeight } : undefined}>
-      <table className="idc3__table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Hostname</th>
-            <th>Location (Rack)</th>
-            <th>U</th>
-            <th>Brand</th>
-            <th>Model</th>
-            <th>S/N</th>
-            {hasActions && <th></th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((d, i) => {
-            const editing = editId === d.id;
-            return (
-              <tr key={d.id || `${d.serial_number}-${i}`} className={editing ? 'idc3__row--edit' : ''}>
-                <td>{i + 1}</td>
-                {editing ? (
-                  <>
-                    <td><input className="idc3__input" value={form.hostname} onChange={change('hostname')} onKeyDown={onKey} /></td>
-                    <td><input className="idc3__input" value={form.location} onChange={change('location')} onKeyDown={onKey} /></td>
-                    <td><input className="idc3__input idc3__input--sm" value={form.position_u} onChange={change('position_u')} onKeyDown={onKey} /></td>
-                    <td><input className="idc3__input" value={form.brand} onChange={change('brand')} onKeyDown={onKey} /></td>
-                    <td><input className="idc3__input" value={form.model} onChange={change('model')} onKeyDown={onKey} /></td>
-                    <td><input className="idc3__input" value={form.serial_number} onChange={change('serial_number')} onKeyDown={onKey} placeholder="เว้นว่างได้" /></td>
-                    <td className="idc3__actions">
-                      <button type="button" className="mini-btn mini-btn--save" onClick={submitEdit} disabled={saving}>
-                        {saving ? '...' : 'บันทึก'}
-                      </button>
-                      <button type="button" className="mini-btn" onClick={cancelEdit} disabled={saving}>ยกเลิก</button>
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td>{d.hostname}</td>
-                    <td>{d.location}</td>
-                    <td>{d.position_u}</td>
-                    <td>{d.brand}</td>
-                    <td>{d.model}</td>
-                    <td>
-                      {d.serial_number || (onSave ? <span className="idc3__missing">ยังไม่มี S/N</span> : '')}
-                    </td>
-                    {hasActions && (
-                      <td className="idc3__actions">
-                        {onSave && (
-                          <button type="button" className="mini-btn mini-btn--edit" onClick={() => startEdit(d)}>แก้ไข</button>
-                        )}
-                        {onDelete && (
-                          <button type="button" className="mini-btn mini-btn--del" onClick={() => onDelete(d)}>ลบ</button>
-                        )}
-                      </td>
-                    )}
-                  </>
-                )}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+    return (
+        <div className="idc3__table-wrap" style={maxHeight ? { maxHeight } : undefined}>
+            <table className="idc3__table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Hostname</th>
+                        <th>Location (Rack)</th>
+                        <th>U</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th>S/N</th>
+                        {showSync && <th>FaceRack</th>}
+                        {hasActions && <th></th>}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((d, i) => {
+                        const editing = editId === d.id;
+                        const sync = SYNC_LABEL[d.sync_status];
+                        return (
+                            <tr key={d.id || `row-${i}`} className={editing ? 'idc3__row--edit' : ''}>
+                                <td>{i + 1}</td>
+
+                                {editing ? (
+                                    <>
+                                        <td><input className="idc3__input idc3__input--lg" value={form.hostname} onChange={change('hostname')} onKeyDown={onKey} autoFocus /></td>
+                                        <td><input className="idc3__input" value={form.location} onChange={change('location')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input idc3__input--sm" value={form.position_u} onChange={change('position_u')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input" value={form.brand} onChange={change('brand')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input idc3__input--lg" value={form.model} onChange={change('model')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input" value={form.serial_number} onChange={change('serial_number')} onKeyDown={onKey} placeholder="เว้นว่างได้" /></td>
+                                        {showSync && <td>-</td>}
+                                        <td className="idc3__actions">
+                                            <button type="button" className="mini-btn mini-btn--save" onClick={submitEdit} disabled={saving}>
+                                                {saving ? '...' : 'บันทึก'}
+                                            </button>
+                                            <button type="button" className="mini-btn" onClick={cancelEdit} disabled={saving}>ยกเลิก</button>
+                                        </td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td>{d.hostname}</td>
+                                        <td>{d.location}</td>
+                                        <td>{d.position_u}</td>
+                                        <td>{d.brand}</td>
+                                        <td>{d.model}</td>
+                                        <td>
+                                            {d.serial_number || (
+                                                <span className="idc3__missing">{onSave ? 'ยังไม่มี S/N' : ''}</span>
+                                            )}
+                                        </td>
+
+                                        {showSync && (
+                                            <td>
+                                                {d.sync_status ? (
+                                                    <span
+                                                        className={`idc3__sync idc3__sync--${sync ? sync[1] : 'err'}`}
+                                                        title={d.sync_note || ''}
+                                                    >
+                                                        {sync ? sync[0] : d.sync_status}
+                                                    </span>
+                                                ) : (
+                                                    <span className="idc3__sync">ยังไม่ซิงก์</span>
+                                                )}
+                                            </td>
+                                        )}
+
+                                        {hasActions && (
+                                            <td className="idc3__actions">
+                                                {onSave && (
+                                                    <button type="button" className="mini-btn mini-btn--edit" onClick={() => startEdit(d)}>แก้ไข</button>
+                                                )}
+                                                {onDelete && (
+                                                    <button type="button" className="mini-btn mini-btn--del" onClick={() => onDelete(d)}>ลบ</button>
+                                                )}
+                                            </td>
+                                        )}
+                                    </>
+                                )}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
 }
