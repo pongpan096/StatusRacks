@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import './MenuBarCustom.css'; // ต้องใช้ชื่อนี้ให้ตรงกับไฟล์จริงในโฟลเดอร์ components ครับ
-
+import './MenuBarCustom.css';
 
 /* ═══════════ ลิงก์เมนูปกติ ═══════════ */
 const linkClass = ({ isActive }) =>
@@ -21,7 +20,7 @@ function NavDropdown({ label, items }) {
     setOpen(false);
   }, [location.pathname]);
 
-  // ปิดเมนูเมื่อคลิกที่อื่น (สำหรับมือถือ / แท็บเล็ต)
+  // ปิดเมนูเมื่อคลิกที่อื่น
   useEffect(() => {
     const handleOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -91,10 +90,6 @@ export default function MenuBar() {
       <nav className="menubar__nav">
         <NavLink to="/floorplan" className={linkClass}>
           Floor Plan
-        </NavLink>
-
-        <NavLink to="/rack-edit" className={linkClass}>
-          FaceRack
         </NavLink>
 
         <NavDropdown

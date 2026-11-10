@@ -178,10 +178,9 @@
     font-size: 0.85rem;
 }
 
-/* ═════════════ ตาราง ═════════════ */
+/* ═════════════ ตาราง (ขยายเต็มพื้นที่ ไม่มี scroll ขัดจังหวะ) ═════════════ */
 .idc3__table-wrap {
-    overflow: auto;
-    /* เลื่อนซ้าย-ขวา / ขึ้น-ลง ในกรอบ */
+    overflow: visible; /* ปลดล็อกไม่ให้จำกัดกรอบความสูง */
     background: #fff;
     border: 1px solid #cbd5e1;
     border-radius: 10px;
@@ -198,17 +197,16 @@
     padding: 10px 16px;
     text-align: left;
     white-space: nowrap;
-    /* ตัวหนังสือไม่ตกบรรทัด */
 }
 
 .idc3__table thead th {
     position: sticky;
-    /* หัวตารางค้างด้านบนตอนเลื่อน */
-    top: 0;
-    z-index: 1;
+    top: 60px; /* เว้นระยะจากแถบเมนูด้านบน (MenuBar ติด sticky ด้านบนสุด 0px) ป้องกันเมนูบังหัวตาราง */
+    z-index: 10;
     background: #1e293b;
     color: #fff;
     font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .idc3__table td {

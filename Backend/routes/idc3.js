@@ -232,17 +232,38 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/idc3/:id?site=IDC3-1
-router.delete('/:id', async (req, res) => {
-  try {
-    const table = getTable(req.query.site);
-    if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
+// ═══════════════════════════════════════════════════════════
+// เส้นทางสำหรับลบข้อมูลทั้งหมดใน Table ตาม site (ต้องอยู่บนสุด)
+// ═══════════════════════════════════════════════════════════
+router.delete('/clear', async (req, res) => {
+    try {
+        const table = getTable(req.query.site);
+        if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
 
-    const { error } = await supabase.from(table).delete().eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ message: 'ลบสำเร็จ' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+        // คำสั่งลบข้อมูลทั้งหมดในตารางของ Supabase (เช่น เงื่อนไข id.not.is.null หรือลบทุกแถว)
+        const { error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        if (error) throw error;
+        res.json({ message: 'ลบข้อมูลทั้งหมดสำเร็จ' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+// เส้นทางเดิมสำหรับลบทีละ ID (ห้ามลบออก วางไว้ด้านล่างตามเดิม)
+// ═══════════════════════════════════════════════════════════
+router.delete('/:id', async (req, res) => {
+    try {
+        const table = getTable(req.query.site);
+        if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
+
+        const { error } = await supabase.from(table).delete().eq('id', req.params.id);
+        if (error) throw error;
+        res.json({ message: 'ลบสำเร็จ' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 module.exports = router;

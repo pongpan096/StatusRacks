@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
-import { RACK_STATUS_LIST, getRackColor, getRackLabel } from '../constants/status';
 import RackFace from './RackFace';
 import './RackEdit.css';
 import './RackFace.css';
@@ -29,13 +28,12 @@ function formatRackLabel(rack) {
 
 /**
  * ถอดรหัสคำค้นหาเป็นตำแหน่งตู้
- * รองรับ:
- *  - 1-9-1, 01-09-01, 1/9/1, 1 9 1  → Zone 1 Row 9 Rack 1
- *  - 1-9                            → ทุกตู้ใน Zone 1 Row 9
- *  - N1-R6, N1-6, N1R6, NET1-6, NET-1-R6 → NET-1 Rack 6
- *  - T2-R3, TEL2-3, TEL-2-3, t2r3   → TEL-2 Rack 3
- *  - N1, NET-2, T1, TEL2            → ทุกตู้ในโซนนั้น
- * คืนค่า null ถ้าไม่ใช่รูปแบบ Location (จะไปค้นหาเป็น Serial Number แทน)
+ *  - 1-9-1, 01-09-01, 1/9/1  → Zone 1 Row 9 Rack 1
+ *  - 1-9                     → ทุกตู้ใน Zone 1 Row 9
+ *  - N1-R6, N1-6, NET1-6     → NET-1 Rack 6
+ *  - T2-R3, TEL2-3, t2r3     → TEL-2 Rack 3
+ *  - N1, NET-2, T1, TEL2     → ทุกตู้ในโซนนั้น
+ * คืนค่า null ถ้าไม่ใช่รูปแบบ Location (จะไปค้นเป็น Serial Number)
  */
 function parseRackCode(input) {
   const raw = String(input || '').trim().toUpperCase();
@@ -79,11 +77,10 @@ export default function RackEdit({ site = 'IDC3-1' }) {
   const [racks, setRacks] = useState([]);
   const [serialHits, setSerialHits] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
   const [search, setSearch] = useState(''); // ค่าที่พิมพ์ในช่อง input
-  const [query, setQuery] = useState('');   // ค่าจริงที่ใช้ค้นหา (อัปเดตเมื่อกดปุ่มหรือ Enter)
+  const [query, setQuery] = useState('');   // ค่าจริงที่ใช้ค้นหา
 
   /* ───── โหลดข้อมูล Rack ทั้งหมด ───── */
   const loadRacks = async () => {
@@ -200,27 +197,6 @@ export default function RackEdit({ site = 'IDC3-1' }) {
     setSerialHits([]);
   };
 
-  /* ───── เปลี่ยนสถานะ Rack ───── */
-  const handleStatusChange = async (rack, newStatus) => {
-    if (!canWrite) {
-      setMessage({ type: 'error', text: 'บัญชีของคุณไม่มีสิทธิ์แก้ไขข้อมูล' });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await api.put(`/racks/${rack.id}`, { status: newStatus });
-      setRacks((prev) =>
-        prev.map((r) => (r.id === rack.id ? { ...r, status: newStatus } : r))
-      );
-      setMessage({ type: 'success', text: 'อัปเดตสถานะเรียบร้อยแล้ว' });
-    } catch {
-      setMessage({ type: 'error', text: 'อัปเดตสถานะไม่สำเร็จ' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const isSerialTooShort =
     !parsed && query.trim().length > 0 && query.trim().length < MIN_SERIAL_LENGTH;
 
@@ -228,7 +204,7 @@ export default function RackEdit({ site = 'IDC3-1' }) {
     <div className="rackedit">
       {/* ═══ หัวข้อหน้า ═══ */}
       <div className="rackedit__head">
-        <h1>แก้ไขสถานะ Rack ({site})</h1>
+        <h1>FaceRack ({site})</h1>
         <button type="button" className="btn-ghost" onClick={loadRacks}>
           รีเฟรช
         </button>
@@ -306,29 +282,6 @@ export default function RackEdit({ site = 'IDC3-1' }) {
         <div className="rack-face-container">
           {filtered.map((rack) => (
             <div key={rack.id} className="rack-face-block">
-              {/* แถบเปลี่ยนสถานะของ Rack ตัวนี้ */}
-              <div className="rack-status-bar">
-                <span
-                  className="rack-status-dot"
-                  style={{ background: getRackColor(rack.status) }}
-                />
-                <span className="rack-status-text">
-                  สถานะปัจจุบัน: <strong>{getRackLabel(rack.status)}</strong>
-                </span>
-                <select
-                  className="rack-status-select"
-                  value={rack.status ?? RACK_STATUS_LIST[0]?.value ?? ''}
-                  disabled={!canWrite || saving}
-                  onChange={(e) => handleStatusChange(rack, e.target.value)}
-                >
-                  {RACK_STATUS_LIST.map((s) => (
-                    <option key={s.value ?? s} value={s.value ?? s}>
-                      {s.label ?? getRackLabel(s)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <RackFace
                 rack={rack}
                 displayLabel={getLabelFor(rack)}

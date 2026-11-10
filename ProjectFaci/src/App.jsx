@@ -20,7 +20,6 @@ export default function App() {
         {/* ครอบทุกหน้าที่มีเมนูด้านบน */}
         <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
           <Route path="/floorplan" element={<Floorplan />} />
-          <Route path="/rack-edit" element={<RackEdit />} />
           <Route path="/idc3-1" element={<Idc3Page site="IDC3-1" />} />
           <Route path="/idc3-2" element={<Idc3Page site="IDC3-2" />} />
           <Route path="/facerack-1" element={<RackEdit site="IDC3-1" />} />

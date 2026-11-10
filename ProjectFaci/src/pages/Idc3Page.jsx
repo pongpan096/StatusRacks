@@ -5,10 +5,6 @@ import './Idc3Page.css';
 /* ★ ปรับให้ตรงโปรเจกต์ (คัดลอกจากไฟล์เดิมได้) ★ */
 import api from '../api';
 import { useAuth } from '../hooks/useAuth';
-// ถ้า AuthContext อยู่โฟลเดอร์ context
-
-
-/* ───────────────────────────────────────────── */
 
 const SYNC_LABEL = {
     synced: ['ผูกกับตู้แล้ว', 'ok'],
@@ -20,7 +16,6 @@ const SYNC_LABEL = {
     error: ['ผิดพลาด', 'err'],
 };
 
-/* ชื่อหัวคอลัมน์ในไฟล์ Excel/CSV ที่ยอมรับ (เทียบแบบไม่สนตัวพิมพ์และอักขระพิเศษ) */
 const HEADER_MAP = {
     hostname: ['hostname', 'host', 'devicename', 'name'],
     location: ['location', 'locationrack', 'rack', 'rackno'],
@@ -55,12 +50,9 @@ async function parseFile(file) {
 }
 
 export default function Idc3Page({ site = 'IDC3-1' }) {
-    /* ★ ปรับให้ตรงระบบสิทธิ์ของคุณ ★ */
     const { user } = useAuth();
-    console.log ('Current User Role ', user);
-    // const canWrite = ['admin', 'editor'].includes(user?.role);
-     const canWrite = true; // บังคับเป็น true ไปก่อน
-    /* ─────────────────────────────── */
+    console.log('Current User Role ', user);
+    const canWrite = true;
 
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -71,6 +63,11 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
     const [fileName, setFileName] = useState('');
     const [importing, setImporting] = useState(false);
     const [syncing, setSyncing] = useState(false);
+
+    // State สำหรับควบคุม Modal ยืนยันลบทั้งหมด
+    const [showClearModal, setShowClearModal] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+    const [clearing, setClearing] = useState(false);
 
     const fileRef = useRef(null);
 
@@ -86,7 +83,6 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         }
     };
 
-    // เปลี่ยนไซต์ (IDC3-1 / IDC3-2) แล้วโหลดใหม่ พร้อมล้างสถานะเดิม
     useEffect(() => {
         setItems([]);
         setPreview(null);
@@ -94,7 +90,6 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         setSearch('');
         setMessage(null);
         loadItems();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [site]);
 
     const filtered = useMemo(() => {
@@ -116,10 +111,9 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         };
     }, [preview]);
 
-    /* ───────── เลือกไฟล์ ───────── */
     const handleFile = async (e) => {
         const file = e.target.files?.[0];
-        e.target.value = ''; // ให้เลือกไฟล์เดิมซ้ำได้
+        e.target.value = '';
         if (!file) return;
 
         setMessage(null);
@@ -143,7 +137,6 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         setFileName('');
     };
 
-    /* ───────── ยืนยันนำเข้า ───────── */
     const confirmImport = async () => {
         if (!preview || preview.length === 0) return;
         setImporting(true);
@@ -168,7 +161,6 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         }
     };
 
-    /* ───────── ซิงก์ทั้งตารางไป FaceRack ───────── */
     const handleSyncAll = async () => {
         if (!window.confirm(`ซิงก์ Location ของ ${site} ไปที่ FaceRack ทั้งหมด?`)) return;
         setSyncing(true);
@@ -178,7 +170,7 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
             await loadItems();
             setMessage({
                 type: 'ok',
-                text: `ซิงก์สำเร็จ ${res.data.synced} รายการ, ยังไม่ผูก ${res.data.notSynced} รายการ (เอาเมาส์ชี้ป้ายสถานะเพื่อดูสาเหตุ)`,
+                text: `ซิงก์สำเร็จ ${res.data.synced} รายการ, ยังไม่ผูก ${res.data.notSynced} รายการ`,
             });
         } catch (err) {
             setMessage({ type: 'err', text: err.response?.data?.message || 'ซิงก์ไม่สำเร็จ' });
@@ -187,7 +179,25 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         }
     };
 
-    /* ───────── ลบ / แก้ไข ───────── */
+    const handleConfirmClearAll = async (e) => {
+        e.preventDefault();
+        if (confirmText !== site) return;
+
+        setClearing(true);
+        setMessage(null);
+        try {
+            await api.delete(`/idc3/clear?site=${site}`);
+            setItems([]);
+            setMessage({ type: 'ok', text: `ลบอุปกรณ์ทั้งหมดใน ${site} เรียบร้อยแล้ว` });
+            setShowClearModal(false);
+            setConfirmText('');
+        } catch (err) {
+            setMessage({ type: 'err', text: err.response?.data?.message || 'ลบข้อมูลทั้งหมดไม่สำเร็จ' });
+        } finally {
+            setClearing(false);
+        }
+    };
+
     const handleDelete = async (d) => {
         if (!window.confirm(`ลบ ${d.hostname} ?\n(อุปกรณ์ใน FaceRack จะไม่ถูกลบ)`)) return;
         try {
@@ -209,7 +219,6 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
         }
     };
 
-    /* ───────── แสดงผล ───────── */
     return (
         <div className="idc3">
             <div className="idc3__head">
@@ -227,6 +236,11 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
                         placeholder="ค้นหา Hostname / Rack / Model / S/N"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.target.blur(); // ซ่อนคีย์บอร์ดหรือเอาฟกัสออกเมื่อกด Enter
+                            }
+                        }}
                     />
 
                     {canWrite && (
@@ -248,6 +262,15 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
                                 disabled={syncing || items.length === 0}
                             >
                                 {syncing ? 'กำลังซิงก์...' : 'ซิงก์ไป FaceRack'}
+                            </button>
+                            <button
+                                type="button"
+                                className="idc3__btn"
+                                style={{ background: '#dc2626', borderColor: '#dc2626', color: '#fff' }}
+                                onClick={() => { setConfirmText(''); setShowClearModal(true); }}
+                                disabled={items.length === 0}
+                            >
+                                ลบทั้งหมด
                             </button>
                         </>
                     )}
@@ -278,11 +301,11 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
                         </div>
                     </div>
 
-                    <IdcTable rows={preview} maxHeight={380} />
+                    <IdcTable rows={preview} />
 
                     <p className="idc3__more">
-                        ทั้งหมด {preview.length} แถว เลื่อนเมาส์ในตารางเพื่อดูแถวที่เหลือ
-                        {previewStats.noSn > 0 && ` | ไม่มี S/N ${previewStats.noSn} แถว (นำเข้าได้ เติมทีหลังด้วยปุ่มแก้ไข)`}
+                        ทั้งหมด {preview.length} แถว
+                        {previewStats.noSn > 0 && ` | ไม่มี S/N ${previewStats.noSn} แถว`}
                         {previewStats.noHostname > 0 && ` | ไม่มี Hostname ${previewStats.noHostname} แถว (จะถูกข้าม)`}
                     </p>
                 </div>
@@ -295,21 +318,91 @@ export default function Idc3Page({ site = 'IDC3-1' }) {
                     rows={filtered}
                     onDelete={canWrite ? handleDelete : null}
                     onSave={canWrite ? handleSave : null}
-                    maxHeight={520}
                     showSync
                 />
+            )}
+
+            {/* Modal ยืนยันการลบทั้งหมด */}
+            {showClearModal && (
+                <div className="rf-overlay">
+                    <div className="rf-modal" style={{ maxWidth: '420px' }}>
+                        <h3 className="rf-modal-title" style={{ color: '#dc2626' }}>⚠️ ยืนยันลบข้อมูลทั้งหมด</h3>
+                        <p className="rf-modal-desc">
+                            คุณกำลังจะลบอุปกรณ์ทั้งหมด ({items.length} รายการ) ใน <strong>{site}</strong> ออกจากระบบ ข้อมูลที่ลบแล้วจะไม่สามารถกู้คืนได้
+                        </p>
+                        <p style={{ fontSize: '0.85rem', color: '#475569', marginBottom: '12px' }}>
+                            โปรดพิมพ์คำว่า <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', color: '#0f172a' }}>{site}</code> เพื่อยืนยัน:
+                        </p>
+
+                        <form onSubmit={handleConfirmClearAll}>
+                            <div className="rf-field" style={{ marginBottom: '20px' }}>
+                                <input
+                                    type="text"
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value)}
+                                    placeholder={`พิมพ์ ${site} ที่นี่`}
+                                    autoFocus
+                                    required
+                                />
+                            </div>
+
+                            <div className="rf-modal-actions">
+                                <button
+                                    type="button"
+                                    className="btn-ghost"
+                                    onClick={() => setShowClearModal(false)}
+                                    disabled={clearing}
+                                    style={{ padding: '8px 16px', background: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer' }}
+                                >
+                                    ยกเลิก
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="idc3__btn"
+                                    style={{ background: '#dc2626', borderColor: '#dc2626', color: '#fff', padding: '8px 16px', borderRadius: '8px', opacity: confirmText !== site ? 0.5 : 1, cursor: confirmText !== site ? 'not-allowed' : 'pointer' }}
+                                    disabled={confirmText !== site || clearing}
+                                >
+                                    {clearing ? 'กำลังลบ...' : 'ยืนยันลบทั้งหมด'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );
 }
 
-/* ═════════════════ ตาราง ═════════════════ */
+/* ═════════════════ ตารางพร้อมระบบเรียงลำดับ ═════════════════ */
 const EMPTY_FORM = { hostname: '', location: '', position_u: '', brand: '', model: '', serial_number: '' };
 
-function IdcTable({ rows, onDelete, onSave, maxHeight, showSync }) {
+function IdcTable({ rows, onDelete, onSave, showSync }) {
     const [editId, setEditId] = useState(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
+
+    const [sortField, setSortField] = useState('hostname');
+    const [sortDirection, setSortDirection] = useState('asc');
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
+    const sortedRows = useMemo(() => {
+        if (!sortField) return rows;
+        return [...rows].sort((a, b) => {
+            let valA = String(a[sortField] || '').toLowerCase();
+            let valB = String(b[sortField] || '').toLowerCase();
+
+            const cmp = valA.localeCompare(valB, 'th', { numeric: true, sensitivity: 'base' });
+            return sortDirection === 'asc' ? cmp : -cmp;
+        });
+    }, [rows, sortField, sortDirection]);
 
     if (rows.length === 0) return <div className="idc3__empty">ไม่มีข้อมูล</div>;
 
@@ -342,24 +435,41 @@ function IdcTable({ rows, onDelete, onSave, maxHeight, showSync }) {
         if (e.key === 'Escape') cancelEdit();
     };
 
+    const renderSortIcon = (field) => {
+        if (sortField !== field) return <span style={{ opacity: 0.3, marginLeft: '6px' }}>↕</span>;
+        return <span style={{ marginLeft: '6px', color: '#60a5fa' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>;
+    };
+
     return (
-        <div className="idc3__table-wrap" style={maxHeight ? { maxHeight } : undefined}>
+        <div className="idc3__table-wrap">
             <table className="idc3__table">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Hostname</th>
-                        <th>Location (Rack)</th>
-                        <th>U</th>
-                        <th>Brand</th>
-                        <th>Model</th>
-                        <th>S/N</th>
+                        <th style={{ width: '50px' }}>#</th>
+                        <th onClick={() => handleSort('hostname')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Hostname {renderSortIcon('hostname')}
+                        </th>
+                        <th onClick={() => handleSort('location')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Location (Rack) {renderSortIcon('location')}
+                        </th>
+                        <th onClick={() => handleSort('position_u')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            U {renderSortIcon('position_u')}
+                        </th>
+                        <th onClick={() => handleSort('brand')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Brand {renderSortIcon('brand')}
+                        </th>
+                        <th onClick={() => handleSort('model')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Model {renderSortIcon('model')}
+                        </th>
+                        <th onClick={() => handleSort('serial_number')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            S/N {renderSortIcon('serial_number')}
+                        </th>
                         {showSync && <th>FaceRack</th>}
                         {hasActions && <th></th>}
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((d, i) => {
+                    {sortedRows.map((d, i) => {
                         const editing = editId === d.id;
                         const sync = SYNC_LABEL[d.sync_status];
                         return (

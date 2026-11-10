@@ -1,219 +1,203 @@
-/* ═══════════════ CSS หน้าผังตู้แร็ค (RackFace) โทนเข้มคมชัด ═══════════════ */
+/* ═══════════════ RackFace: ผังตู้แร็ค ═══════════════ */
 
-.rackface {
-  padding: 20px;
+.rf {
+  --rf-unit-h: 42px; /* ความสูงต่อ 1U */
+  --rf-gap: 6px;     /* ช่องว่างระหว่างแถว */
+
+  max-width: 960px;
+  margin: 0 auto 32px;
+  padding: 24px;
   background: #f1f5f9;
-  border-radius: 12px;
-}
-
-.rackface__header {
-  margin-bottom: 20px;
-}
-
-.rackface__header h2 {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-}
-
-.rackface__sub {
-  font-size: 0.9rem;
-  color: #334155;
-  font-weight: 500;
-}
-
-/* ฟอร์มเพิ่ม/แก้ไขอุปกรณ์ */
-.rack-form {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 18px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-.rack-form h3 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  margin-top: 0;
-  margin-bottom: 14px;
-  color: #1e293b;
-}
-
-.rack-form__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.rack-form__grid input,
-.rack-form__note {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid #94a3b8;
-  border-radius: 6px;
-  font-size: 0.92rem;
-  color: #0f172a;
-  outline: none;
-  background: #fff;
-}
-
-.rack-form__grid input:focus,
-.rack-form__note:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-}
-
-.rack-form__note {
-  margin-bottom: 14px;
-}
-
-.rack-form__actions {
-  display: flex;
-  gap: 10px;
-}
-
-/* ═══════════════ โครงสร้างตู้แร็คและช่อง U ═══════════════ */
-
-.rack-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: #334155; /* ปรับโครงตู้ให้เข้มขึ้น ตัดกับตาสบายขึ้น */
-  padding: 8px;
-  border-radius: 10px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* แถวช่องว่าง (Empty Unit) */
-.unit-row {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  height: 38px;
-  border-radius: 5px;
-  padding: 0 12px;
-  font-size: 0.9rem;
-}
-
-.unit-row--empty {
-  color: #64748b;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.unit-no {
-  width: 45px;
-  font-weight: 700;
-  color: #475569;
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-.unit-empty-text {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* แถวที่มีอุปกรณ์อยู่ (รองรับหลาย U) */
-.unit-row--multi {
-  display: flex;
-  align-items: center;
-  background: #ffffff;
-  border: 1px solid #94a3b8;
-  border-left: 5px solid #2563eb;
-  border-radius: 6px;
-  padding: 4px 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  border-radius: 14px;
   box-sizing: border-box;
 }
 
-/* ไฮไลต์กรณีค้นหาเจอ */
-.unit-row--hit {
-  background: #dbeafe; /* สีฟ้าเข้มขึ้น อ่านง่ายชัดเจน */
-  border-color: #2563eb;
-  border-left-width: 7px;
-}
-
-/* กล่องเลขยูนิตด้านซ้ายของอุปกรณ์ */
-.unit-no-stack {
+/* ═══════════ หัวข้อ (อยู่กลาง) ═══════════ */
+.rf-header {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  width: 45px;
-  flex-shrink: 0;
-  border-right: 1px solid #cbd5e1;
-  margin-right: 12px;
-  padding-right: 8px;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.sub-u-badge {
-  font-size: 0.78rem;
+.rf-title {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
   font-weight: 800;
   color: #0f172a;
-  line-height: 1.2;
 }
 
-/* ข้อมูลอุปกรณ์ตรงกลาง */
-.unit-info {
+.rf-sub {
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: #334155;
+}
+
+/* ═══════════ โครงตู้ ═══════════ */
+.rf-cabinet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rf-gap);
+  padding: 16px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid #334155;
+  border-radius: 14px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.28);
+}
+
+.rf-loading {
+  padding: 12px;
+  text-align: center;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+/* ═══════════ แถวว่าง 1U ═══════════ */
+.rf-unit {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--rf-unit-h);
+  padding: 0 18px;
+  background: repeating-linear-gradient(
+    135deg,
+    #ffffff,
+    #ffffff 8px,
+    #f8fafc 8px,
+    #f8fafc 16px
+  );
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.rf-unit-no {
+  min-width: 48px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.rf-unit-empty {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* ═══════════ กล่องอุปกรณ์ (เพิ่ม Padding ซ้าย-ขวาให้โปร่งขึ้น) ═══════════ */
+.rf-device {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* เพิ่มระยะห่างระหว่างบล็อก U, ข้อความ และปุ่ม */
+  height: calc(var(--rf-size) * var(--rf-unit-h) + (var(--rf-size) - 1) * var(--rf-gap));
+  padding: 0 20px 0 12px; /* เพิ่มขอบขวาให้ห่างจากปุ่ม และขอบซ้ายให้ห่างจากป้าย U */
+  background: linear-gradient(180deg, #f0f7ff 0%, #e0f2fe 100%);
+  border: 1px solid #7dd3fc;
+  border-left: 6px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* แถบช่วง U ด้านซ้าย */
+.rf-range {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
+  min-width: 52px;
+  padding: 8px 0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.rf-range-line {
+  flex: 1;
+  width: 2px;
+  margin: 4px 0;
+  background: #7dd3fc;
+  border-radius: 2px;
+}
+
+/* ข้อมูลตรงกลาง */
+.rf-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  overflow: hidden;
-  padding-right: 10px;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 0;
 }
 
-.unit-info strong {
-  font-size: 0.95rem;
-  color: #020617; /* ตัวหนังสือเข้มสุด อ่านง่าย */
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.rf-model {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #020617;
+  letter-spacing: 0.2px;
+  line-height: 1.3;
 }
 
-.unit-info small {
-  font-size: 0.82rem;
-  color: #334155; /* ปรับสีเทาให้เข้มขึ้น ไม่จางเกินไป */
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
+.rf-detail {
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: #334155;
+  line-height: 1.3;
 }
 
-/* ป้ายคำว่า "ตรงกับที่ค้นหา" */
-.hit-badge {
-  background: #1d4ed8;
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 700;
+.rf-badge {
+  margin-left: 10px;
   padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.3px;
+  border-radius: 999px;
+  background: #d97706;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  vertical-align: middle;
 }
 
-/* กลุ่มปุ่มจัดการด้านขวา */
-.unit-actions {
+/* กลุ่มปุ่มจัดการด้านขวา (เว้นระยะไม่ให้ชิดขอบขวาของกล่อง) */
+.rf-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
+  margin-right: 4px; 
 }
 
+/* ═══════════ ผลค้นหา S/N: สีเหลืองกะพริบเบา ๆ ═══════════ */
+.rf-device--hit {
+  background: linear-gradient(180deg, #fefce8 0%, #fef08a 100%);
+  border-color: #facc15;
+  border-left-color: #ca8a04;
+  animation: rf-pulse 1.6s ease-in-out infinite;
+}
+
+.rf-device--hit .rf-range {
+  color: #854d0e;
+}
+
+.rf-device--hit .rf-range-line {
+  background: #fde047;
+}
+
+@keyframes rf-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.4); }
+  50%      { box-shadow: 0 0 0 7px rgba(202, 138, 4, 0); }
+}
+
+/* ═══════════ ปุ่มเล็กในกล่องอุปกรณ์ ═══════════ */
 .mini-btn {
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
+  padding: 6px 12px;
   border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 750;
+  cursor: pointer;
   transition: all 0.15s;
 }
 
@@ -238,14 +222,103 @@
 }
 .mini-btn--del:hover { background: #fee2e2; }
 
-/* แถวต่อเนื่องสำหรับอุปกรณ์ที่มีขนาดมากกว่า 1U (เช่น U2 เมื่ออุปกรณ์เริ่มที่ U3 ขนาด 2U) */
-.unit-row--multi-sub {
+/* ═══════════ Popup (แก้ไข / ย้ายตู้) ═══════════ */
+.rf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
   display: flex;
   align-items: center;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-left: 4px solid #94a3b8;
-  border-radius: 4px;
-  padding: 0 12px;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.rf-modal {
+  width: 100%;
+  max-width: 460px;
+  padding: 24px 28px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   box-sizing: border-box;
+}
+
+.rf-modal-title {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #020617;
+}
+
+.rf-modal-desc {
+  margin: 0 0 18px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.rf-modal-error {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.rf-field {
+  display: block;
+  flex: 1;
+  margin-bottom: 14px;
+}
+
+.rf-field > span {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.rf-field input,
+.rf-field select {
+  wwwidth: 100%;
+  padding: 10px 12px;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #020617;
+  box-sizing: border-box;
+}
+
+.rf-field input:focus,
+.rf-field select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.rf-field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.rf-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* ═══════════ มือถือ ═══════════ */
+@media (max-width: 640px) {
+  .rf { padding: 12px; }
+  .rf-title { font-size: 1.25rem; }
+  .rf-cabinet { padding: 10px; }
+  .rf-device { gap: 10px; padding: 0 10px 0 8px; }
+  .rf-actions { flex-direction: column; gap: 4px; }
 }
