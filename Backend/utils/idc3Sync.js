@@ -1,20 +1,39 @@
 const supabase = require('../config/supabase');
 
 const AUTO_MARK_INSTALLED = true;
+
 const clean = (v) => String(v ?? '').trim();
 
 function parseLocation(text) {
   const s = clean(text).toUpperCase().replace(/\s+/g, '');
   if (!s) return null;
 
-  let m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{1,2})$/);
-  if (m) return { zone_name: `Zone ${Number(m[1])} Row ${Number(m[2])}`, rack_number: Number(m[3]) };
+  // 1) แบบ Zone-Row-Rack เช่น 02-03-04 หรือ 2-3-4
+  let m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{1,3})$/);
+  if (m) {
+    return {
+      zone_name: `Zone ${Number(m[1])} Row ${Number(m[2])}`,
+      rack_number: Number(m[3])
+    };
+  }
 
-  m = s.match(/^N(\d)-R?(\d{1,2})$/);
-  if (m) return { zone_name: `NET-${m[1]}`, rack_number: Number(m[2]) };
+  // 2) แบบ N1-03 หรือ NET-1-3 ให้แปลงเป็น NET-1
+  m = s.match(/^N(\d)-?R?(\d{1,3})$/);
+  if (m) {
+    return {
+      zone_name: `NET-${m[1]}`,
+      rack_number: Number(m[2])
+    };
+  }
 
-  m = s.match(/^T(?:EL)?(\d)-R?(\d{1,2})$/);
-  if (m) return { zone_name: `TEL-${m[1]}`, rack_number: Number(m[2]) };
+  // 3) แบบ T1-02 หรือ TEL-1-2 ให้แปลงเป็น TEL-1
+  m = s.match(/^T(\d)-?R?(\d{1,3})$/);
+  if (m) {
+    return {
+      zone_name: `TEL-${m[1]}`,
+      rack_number: Number(m[2])
+    };
+  }
 
   return null;
 }
@@ -23,29 +42,37 @@ function parseUnit(text) {
   const s = clean(text).toUpperCase();
   if (!s) return null;
 
-  const range = s.match(/(\d+)\s*[-–~]\s*U?(\d+)/);
-  if (range) {
-    const a = Number(range[1]);
-    const b = Number(range[2]);
-    if (Math.min(a, b) < 1) return null;
-    return { start: Math.min(a, b), size: Math.abs(a - b) + 1, explicit: true };
+  const mU = s.match(/^U?(\d+)(?:[-–]U?(\d+))?$/);
+  if (mU) {
+    const start = Number(mU[1]);
+    const end = mU[2] ? Number(mU[2]) : start;
+    const min = Math.min(start, end);
+    const max = Math.max(start, end);
+    return { start: min, size: max - min + 1, explicit: true };
   }
-
-  const one = s.match(/\d+/);
-  if (!one || Number(one[0]) < 1) return null;
-  return { start: Number(one[0]), size: 1, explicit: false };
+  return null;
 }
 
-async function syncRows(table, rows) {
+async function syncRows(table, rows, site = 'IDC3-1') {
   const summary = { synced: 0, failed: [] };
   if (!rows || rows.length === 0) return summary;
 
+  // 1. ดึงเฉพาะตู้ของ site นี้
   const { data: racks, error: rErr } = await supabase
     .from('server_racks')
-    .select('id, zone_name, rack_number, power_status');
+    .select('id, zone_name, rack_number, power_status, site')
+    .eq('site', site);
+
   if (rErr) throw rErr;
 
-  const rackMap = new Map(racks.map((r) => [`${r.zone_name}|${r.rack_number}`, r]));
+  // 2. Map Key รูปแบบ `${r.site}|${zone_name}|${rack_number}`
+  const rackMap = new Map(
+    (racks || []).map((r) => [
+      `${r.site}|${String(r.zone_name ?? '').trim().toUpperCase()}|${String(r.rack_number ?? '').trim()}`,
+      r
+    ])
+  );
+  
   const devCache = new Map();
 
   const loadDevices = async (rackId) => {
@@ -80,8 +107,14 @@ async function syncRows(table, rows) {
       const loc = parseLocation(locText);
       if (!loc) { await fail('bad_location', `อ่านรหัส "${locText}" ไม่ได้`); continue; }
 
-      const rack = rackMap.get(`${loc.zone_name}|${loc.rack_number}`);
-      if (!rack) { await fail('rack_not_found', `ไม่พบตู้ ${loc.zone_name} หมายเลข ${loc.rack_number}`); continue; }
+      // 3. แก้ไขให้ค้นหาโดยใส่ site นำหน้าให้ตรงกับ Key ใน Map
+      const searchKey = `${site}|${loc.zone_name.toUpperCase()}|${String(loc.rack_number).trim()}`;
+      const rack = rackMap.get(searchKey);
+      
+      if (!rack) { 
+        await fail('rack_not_found', `ไม่พบตู้ ${loc.zone_name} หมายเลข ${loc.rack_number} ใน Site ${site}`); 
+        continue; 
+      }
 
       const unit = parseUnit(row.position_u);
       if (!unit) { await fail('no_unit', 'ยังไม่ได้ระบุตำแหน่ง U'); continue; }

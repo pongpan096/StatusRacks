@@ -39,7 +39,7 @@ function parseRackCode(input) {
   const raw = String(input || '').trim().toUpperCase();
   if (!raw) return null;
 
-  // 1) แบบตัวเลข Zone-Row-Rack หรือ Zone-Row
+  // 1) แบบ Zone-Row-Rack เช่น 1-9-1 หรือ 2-3-1
   const parts = raw.split(/[-_/\s]+/).filter(Boolean);
   if ((parts.length === 3 || parts.length === 2) && parts.every((p) => /^\d+$/.test(p))) {
     const zoneNum = Number(parts[0]);
@@ -52,11 +52,12 @@ function parseRackCode(input) {
     };
   }
 
-  // 2) แบบ NET / TEL
+  // 2) แบบตัวย่อ N / T เช่น N2-01, N1-3, TEL2-3, T1-2
   const compact = raw.replace(/\s+/g, '');
   const m = compact.match(/^(NET|N|TEL|T)[-_]?(\d{1,2})(?:[-_]?R?(\d{1,3}))?$/);
   if (m) {
-    const type = m[1].startsWith('N') ? 'NET' : 'TEL';
+    const prefix = m[1].toUpperCase();
+    const type = (prefix.startsWith('N')) ? 'NET' : 'TEL';
     const num = Number(m[2]);
     const rackNum = m[3] ? String(Number(m[3])) : null;
     return {
@@ -146,33 +147,34 @@ export default function RackEdit({ site = 'IDC3-1' }) {
     fetchSerial();
   }, [query, parsed, racks]);
 
-  /* ───── ชั้นที่ 3: สรุปว่าจะแสดง Rack ไหนบ้าง ───── */
+  /* ───── ชั้นที่ 3: สรุปว่าจะแสดง Rack ไหนบ้าง (จำกัดให้แสดงแค่ตู้เดียวและตรงกับ site) ───── */
   const filtered = useMemo(() => {
     if (!query.trim()) return [];
 
     if (parsed) {
-      return racks
+      const matchedRacks = racks
         .filter((rack) => {
+          // กรองเฉพาะตู้ที่อยู่ในไซต์ (site) ปัจจุบันเท่านั้น
+          if (rack.site && rack.site !== site) return false;
+
           const zone = getZone(rack).toLowerCase().replace(/\s+/g, ' ');
           const num = String(rack.rack_number ?? '').trim();
           return zone === parsed.zoneName && (parsed.rack === null || num === parsed.rack);
         })
         .sort((a, b) => Number(a.rack_number) - Number(b.rack_number));
+
+      // ตัดให้แสดงผลแค่ตู้แรกตู้เดียวเท่านั้น ป้องกันการแสดงผลซ้อนกันหลายตู้
+      return matchedRacks.length > 0 ? [matchedRacks[0]] : [];
     }
 
     if (serialHits.length > 0) {
-      const seen = new Set();
-      return serialHits
-        .map((hit) => hit.rack)
-        .filter((r) => {
-          if (seen.has(r.id)) return false;
-          seen.add(r.id);
-          return true;
-        });
+      // เอาเฉพาะตู้แรกที่เจอจากผลการค้นหา S/N ที่อยู่ใน site ปัจจุบัน เพียงตู้เดียว
+      const firstHit = serialHits.find((hit) => !hit.rack.site || hit.rack.site === site);
+      return firstHit?.rack ? [firstHit.rack] : [];
     }
 
     return [];
-  }, [racks, parsed, serialHits, query]);
+  }, [racks, parsed, serialHits, query, site]);
 
   /* ───── id ของอุปกรณ์ที่ต้องไฮไลต์ ───── */
   const highlightIds = useMemo(
@@ -251,7 +253,7 @@ export default function RackEdit({ site = 'IDC3-1' }) {
         <div className="serial-result">
           <span className="serial-result__icon">OK</span>
           <div>
-            พบ <strong>{serialHits.length}</strong> อุปกรณ์ที่ตรงกับ Serial Number นี้
+            พบอุปกรณ์ที่ตรงกับ Serial Number นี้
             <ul className="serial-result__list">
               {serialHits.map((hit) => (
                 <li key={hit.device.id}>

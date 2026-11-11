@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import api from '../api';
 import { rackNextStatus, rackStatusColor, crahNextStatus, crahStatusColor } from '../utils/StatusHelpers';
 
+const SITES = ['IDC3-1', 'IDC3-2'];
+
 // ---------- ป้าย G-Code เล็กๆ มุมบนกล่อง ----------
 function GBadge({ code }) {
   return (
@@ -28,7 +30,7 @@ function StaticBox({ gCode, title }) {
   );
 }
 
-// ---------- แถบ CRAH บน/ล่าง (กดได้จริง เชื่อมกับ Database) ----------
+// ---------- แถบ CRAH บน/ล่าง ----------
 const CrahBar = ({ gCode, title, group, crahList, onClickCrah }) => {
   const units = crahList[group] || [];
   return (
@@ -59,42 +61,41 @@ const CrahBar = ({ gCode, title, group, crahList, onClickCrah }) => {
         fontWeight: 'bold',
         color: '#1e3a8a'
       }}>
-        <span style={{ 
-          fontSize: '9px', 
-          background: '#e2e8f0', 
-          padding: '1px 4px', 
-          borderRadius: 3, 
-          fontWeight: 'bold', 
-          color: '#475569', 
-          border: '1px solid #cbd5e1' 
+        <span style={{
+          fontSize: '9px',
+          background: '#e2e8f0',
+          padding: '1px 4px',
+          borderRadius: 3,
+          fontWeight: 'bold',
+          color: '#475569',
+          border: '1px solid #cbd5e1'
         }}>
           {gCode}
         </span>
         {title}
       </legend>
 
-        {units.map(c => {
-        // 💡 กำหนดค่าสีเริ่มต้นเป็นสีขาวหรือค่าสำรอง
+      {units.map((c) => {
         let bgColor = '#ffffff';
         let textColor = '#0f172a';
         let borderColor = '#cbd5e1';
 
-        // เช็คสถานะ (สามารถปรับชื่อฟิลด์ c.status หรือ c.state ให้ตรงกับฐานข้อมูลจริงของคุณได้เลยครับ)
         const currentStatus = (c.status || c.state || '').toUpperCase();
+        const isIso = String(c.crah_code || '').includes('ISO');
 
-        if (c.crah_code.includes('ISO')) {
-          bgColor = '#e2e8f0'; // สีสำหรับช่อง ISO
+        if (isIso) {
+          bgColor = '#e2e8f0';
           borderColor = '#64748b';
         } else if (currentStatus === 'ON' || currentStatus === 'RUNNING' || currentStatus === 'ACTIVE') {
-          bgColor = '#22c55e'; // สีเขียว: ON
+          bgColor = '#22c55e';
           textColor = '#ffffff';
           borderColor = '#16a34a';
         } else if (currentStatus === 'OFF' || currentStatus === 'STOP' || currentStatus === 'FAULT') {
-          bgColor = '#ef4444'; // สีแดง: OFF
+          bgColor = '#ef4444';
           textColor = '#ffffff';
           borderColor = '#dc2626';
         } else if (currentStatus === 'STANDBY' || currentStatus === 'IDLE') {
-          bgColor = '#f97316'; // สีส้ม: Standby
+          bgColor = '#f97316';
           textColor = '#ffffff';
           borderColor = '#ea580c';
         }
@@ -104,7 +105,7 @@ const CrahBar = ({ gCode, title, group, crahList, onClickCrah }) => {
             key={c.id || c.crah_code}
             onClick={() => onClickCrah && onClickCrah(c)}
             style={{
-              border: c.crah_code.includes('ISO') ? '1px dashed #64748b' : `1px solid ${borderColor}`,
+              border: isIso ? '1px dashed #64748b' : `1px solid ${borderColor}`,
               borderRadius: 4,
               padding: '4px 6px',
               background: bgColor,
@@ -159,7 +160,7 @@ function SidePanel({ gCode, title, crahTopGroup, crahBottomGroup, crahList, rack
         <div style={{ fontSize: 9, fontWeight: 'bold', marginBottom: 4 }}>{title}</div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {racks.map(rack => (
+          {racks.map((rack) => (
             <button
               key={rack.id}
               onClick={() => onClickRack(rack)}
@@ -198,8 +199,9 @@ function SidePanel({ gCode, title, crahTopGroup, crahBottomGroup, crahList, rack
 function ZoneGroup({ zoneNames, racksByZone, onClickRack, reverse }) {
   return (
     <div style={{ display: 'flex', gap: 4, width: '100%', marginBottom: 6 }}>
-      {zoneNames.map(zone => {
-        const list = reverse ? [...racksByZone[zone]].reverse() : racksByZone[zone];
+      {zoneNames.map((zone) => {
+        const base = racksByZone[zone] || [];
+        const list = reverse ? [...base].reverse() : base;
         return (
           <div key={zone} style={{
             flex: 1, minWidth: 0, border: '1px solid #93c5fd', borderRadius: 4,
@@ -212,7 +214,7 @@ function ZoneGroup({ zoneNames, racksByZone, onClickRack, reverse }) {
               {zone}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {list.map(rack => (
+              {list.map((rack) => (
                 <button
                   key={rack.id}
                   onClick={() => onClickRack(rack)}
@@ -236,11 +238,11 @@ function ZoneGroup({ zoneNames, racksByZone, onClickRack, reverse }) {
 }
 
 const CRAH_GROUP_ORDER = [
-  'CRAH-1 (01-11)', 
-  'CRAH-2 (22-12)', 
-  'NET-1 (25-26)', 
-  'NET-2 (27-28)', 
-  'TEL-1 (23-24)', 
+  'CRAH-1 (01-11)',
+  'CRAH-2 (22-12)',
+  'NET-1 (25-26)',
+  'NET-2 (27-28)',
+  'TEL-1 (23-24)',
   'TEL-2 (29-30)'
 ];
 
@@ -248,28 +250,30 @@ export default function FloorPlan() {
   const [racks, setRacks] = useState([]);
   const [crahUnits, setCrahUnits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [site, setSite] = useState('IDC3-1'); // เฟสที่กำลังดู
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(); }, [site]);
 
-const loadAll = async () => {
-  setLoading(true);
-  try {
-    const [racksRes, crahRes] = await Promise.all([
-      api.get('/racks'),
-      api.get('/crah')
-    ]);
-    setRacks(racksRes.data);
-    setCrahUnits(crahRes.data);
-  } catch (err) {
-    console.error('Error loading data:', err);
-  } finally {
-    setLoading(false); // ← ตัวนี้ต้องมี เพื่อบังคับให้ปิดหน้าจอ "กำลังโหลด" เสมอ
-  }
-};
+  const loadAll = async () => {
+    setLoading(true);
+    try {
+      const [racksRes, crahRes] = await Promise.all([
+        api.get('/racks'),
+        api.get('/crah')
+      ]);
+      const all = Array.isArray(racksRes.data) ? racksRes.data : (racksRes.data?.data ?? []);
+      setRacks(all.filter((r) => r.site === site)); // กรองเฉพาะเฟสที่เลือก
+      setCrahUnits(crahRes.data);
+    } catch (err) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClickRack = async (rack) => {
     const newStatus = rackNextStatus[rack.power_status];
-    setRacks(prev => prev.map(r => r.id === rack.id ? { ...r, power_status: newStatus } : r));
+    setRacks((prev) => prev.map((r) => (r.id === rack.id ? { ...r, power_status: newStatus } : r)));
     try {
       await api.patch(`/racks/${rack.id}/status`, { power_status: newStatus });
     } catch (err) {
@@ -280,7 +284,7 @@ const loadAll = async () => {
 
   const handleClickCrah = async (crah) => {
     const newStatus = crahNextStatus[crah.status];
-    setCrahUnits(prev => prev.map(c => c.id === crah.id ? { ...c, status: newStatus } : c));
+    setCrahUnits((prev) => prev.map((c) => (c.id === crah.id ? { ...c, status: newStatus } : c)));
     try {
       await api.patch(`/crah/${crah.id}/status`, { status: newStatus });
     } catch (err) {
@@ -292,7 +296,7 @@ const loadAll = async () => {
   // ---------- สรุปยอดรวม Server Rack ----------
   const summary = useMemo(() => {
     const result = { total: racks.length, on: 0, off: 0, notInstalled: 0, byCategory: {} };
-    racks.forEach(r => {
+    racks.forEach((r) => {
       if (r.power_status === 'POWER_ON') result.on++;
       else if (r.power_status === 'POWER_OFF') result.off++;
       else result.notInstalled++;
@@ -310,12 +314,12 @@ const loadAll = async () => {
   // ---------- สรุปยอดรวม CRAH ----------
   const crahSummary = useMemo(() => {
     const result = { total: crahUnits.length, on: 0, off: 0, standby: 0, byGroup: {} };
-    CRAH_GROUP_ORDER.forEach(g => {
+    CRAH_GROUP_ORDER.forEach((g) => {
       result.byGroup[g] = { total: 0, on: 0, off: 0, standby: 0 };
     });
-    crahUnits.forEach(c => {
-      const status = (c.status || "").toUpperCase().trim();
-      const group = (c.crah_group || "").trim();
+    crahUnits.forEach((c) => {
+      const status = (c.status || '').toUpperCase().trim();
+      const group = (c.crah_group || '').trim();
 
       if (status === 'ON') result.on++;
       else if (status === 'OFF') result.off++;
@@ -334,22 +338,22 @@ const loadAll = async () => {
   // ---------- จัดกลุ่ม Rack ตาม zone_name ----------
   const racksByZone = useMemo(() => {
     const grouped = {};
-    racks.forEach(r => {
+    racks.forEach((r) => {
       if (!grouped[r.zone_name]) grouped[r.zone_name] = [];
       grouped[r.zone_name].push(r);
     });
-    Object.keys(grouped).forEach(zone => {
-      grouped[zone].sort((a, b) => a.rack_number - b.rack_number);
+    Object.keys(grouped).forEach((zone) => {
+      grouped[zone].sort((a, b) => Number(a.rack_number) - Number(b.rack_number));
     });
     return grouped;
   }, [racks]);
 
   const sortAllZones = (prefix) => {
     return Object.keys(racksByZone)
-      .filter(z => z.startsWith(prefix))
+      .filter((z) => z.startsWith(prefix))
       .sort((a, b) => {
-        const numA = parseInt(a.match(/\d+$/)?.[0] || 0);
-        const numB = parseInt(b.match(/\d+$/)?.[0] || 0);
+        const numA = parseInt(a.match(/\d+$/)?.[0] || 0, 10);
+        const numB = parseInt(b.match(/\d+$/)?.[0] || 0, 10);
         return numA - numB;
       });
   };
@@ -361,11 +365,11 @@ const loadAll = async () => {
   // ---------- จัดกลุ่ม CRAH ตาม crah_group ----------
   const crahByGroup = useMemo(() => {
     const grouped = {};
-    crahUnits.forEach(c => {
+    crahUnits.forEach((c) => {
       if (!grouped[c.crah_group]) grouped[c.crah_group] = [];
       grouped[c.crah_group].push(c);
     });
-    Object.keys(grouped).forEach(g => {
+    Object.keys(grouped).forEach((g) => {
       grouped[g].sort((a, b) => {
         if (g === 'CRAH-2 (22-12)') {
           return b.crah_number - a.crah_number;
@@ -380,15 +384,16 @@ const loadAll = async () => {
 
   return (
     <div style={{ padding: 16, fontFamily: 'sans-serif' }}>
-      
-      {/* ---------- ส่วนสรุปสถานะการ์ดโค้งมน (วางคู่กัน 50% ขนาดเท่ากัน) ---------- */}
+
+      {/* ---------- การ์ดสรุปสถานะ ---------- */}
       <div style={{ display: 'flex', gap: '20px', marginBottom: 24, width: '100%' }}>
-        
+
         {/* 1. การ์ดสรุป Server Rack */}
         <div style={{ flex: 1, width: '50%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937' }}>💻 สรุปสถานะ Server Rack</h4>
-          
-          {/* แถวหัวข้อหลัก */}
+          <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937' }}>
+            💻 สรุปสถานะ Server Rack ({site})
+          </h4>
+
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
             <div style={{ flex: 1.2, background: '#f3f4f6', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>ทั้งหมด: {summary.total}</div>
             <div style={{ flex: 1.2, background: '#d1fae5', color: '#065f46', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>On ไฟแล้ว: {summary.on}</div>
@@ -396,7 +401,6 @@ const loadAll = async () => {
             <div style={{ flex: 1.2, background: '#f3f4f6', color: '#4b5563', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>ยังไม่ติดตั้ง: {summary.notInstalled}</div>
           </div>
 
-          {/* แถวแยกตาม Category */}
           {Object.entries(summary.byCategory).map(([cat, val]) => (
             <div key={cat} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
               <div style={{ flex: 1.2, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '6px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold', color: '#374151' }}>{cat}</div>
@@ -407,11 +411,10 @@ const loadAll = async () => {
           ))}
         </div>
 
-        {/* 2. การ์ดสรุป CRAH (ดีไซน์และขนาดเท่ากันเป๊ะ) */}
+        {/* 2. การ์ดสรุป CRAH */}
         <div style={{ flex: 1, width: '50%', background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', fontWeight: 'bold', color: '#1f2937' }}>❄️ สรุปสถานะ เครื่องปรับอากาศ CRAH</h4>
-          
-          {/* แถวหัวข้อหลัก */}
+
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
             <div style={{ flex: 1.2, background: '#f3f4f6', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>ทั้งหมด: {crahSummary.total}</div>
             <div style={{ flex: 1.2, background: '#d1fae5', color: '#065f46', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>On: {crahSummary.on}</div>
@@ -419,8 +422,7 @@ const loadAll = async () => {
             <div style={{ flex: 1.2, background: '#fef08a', color: '#854d0e', borderRadius: '8px', padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: 'bold' }}>Stand By: {crahSummary.standby}</div>
           </div>
 
-          {/* แถวแยกตาม Group CRAH */}
-          {CRAH_GROUP_ORDER.map(group => {
+          {CRAH_GROUP_ORDER.map((group) => {
             const val = crahSummary.byGroup[group] || { total: 0, on: 0, off: 0, standby: 0 };
             return (
               <div key={group} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
@@ -432,12 +434,32 @@ const loadAll = async () => {
             );
           })}
         </div>
+      </div>
 
+      {/* ---------- หัวข้อ Floor Plan + ปุ่มสลับเฟส ---------- */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>Floor Plan</h2>
+        {SITES.map((s) => (
+          <button
+            key={s}
+            onClick={() => setSite(s)}
+            style={{
+              padding: '4px 12px',
+              borderRadius: 6,
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              border: '1px solid #2563eb',
+              background: site === s ? '#2563eb' : '#fff',
+              color: site === s ? '#fff' : '#2563eb'
+            }}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {/* ---------- Floor Plan เต็มรูปแบบ ---------- */}
-      <h2>Floor Plan</h2>
-            <div style={{
+      <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(120px, 150px) 1fr minmax(120px, 150px)',
         gridTemplateRows: 'auto auto 1fr auto auto',
@@ -448,7 +470,7 @@ const loadAll = async () => {
         borderRadius: 8,
         width: '100%',
         boxSizing: 'border-box',
-        overflowX: 'auto' // ป้องกันหน้าเว็บพังเวลาหน้าจอแคบเกินไป
+        overflowX: 'auto'
       }}>
         {/* แถวบน */}
         <div><StaticBox gCode="G02" title="RECEPTION" /></div>
@@ -482,7 +504,7 @@ const loadAll = async () => {
         </div>
 
         {/* แถวล่าง: CRAH-2 เต็มความกว้าง */}
-        <div style={{ gridColumn: '1 / span 3'  }}>
+        <div style={{ gridColumn: '1 / span 3' }}>
           <CrahBar gCode="G09" title="CRAH-2" group="CRAH-2 (22-12)" crahList={crahByGroup} onClickCrah={handleClickCrah} />
         </div>
 

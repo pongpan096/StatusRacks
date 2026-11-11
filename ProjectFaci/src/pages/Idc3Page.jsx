@@ -386,7 +386,7 @@ function IdcTable({ rows, onDelete, onSave, showSync }) {
 
     const handleSort = (field) => {
         if (sortField === field) {
-            setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
         } else {
             setSortField(field);
             setSortDirection('asc');
@@ -396,8 +396,9 @@ function IdcTable({ rows, onDelete, onSave, showSync }) {
     const sortedRows = useMemo(() => {
         if (!sortField) return rows;
         return [...rows].sort((a, b) => {
-            const valA = String(a[sortField] || '').toLowerCase();
-            const valB = String(b[sortField] || '').toLowerCase();
+            let valA = String(a[sortField] || '').toLowerCase();
+            let valB = String(b[sortField] || '').toLowerCase();
+
             const cmp = valA.localeCompare(valB, 'th', { numeric: true, sensitivity: 'base' });
             return sortDirection === 'asc' ? cmp : -cmp;
         });
@@ -435,32 +436,34 @@ function IdcTable({ rows, onDelete, onSave, showSync }) {
     };
 
     const renderSortIcon = (field) => {
-        if (sortField !== field) return <span style={{ opacity: 0.3, marginLeft: 6 }}>↕</span>;
-        return <span style={{ marginLeft: 6, color: '#60a5fa' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>;
+        if (sortField !== field) return <span style={{ opacity: 0.3, marginLeft: '6px' }}>↕</span>;
+        return <span style={{ marginLeft: '6px', color: '#60a5fa' }}>{sortDirection === 'asc' ? '▲' : '▼'}</span>;
     };
-
-    const sortableTh = (field, label, extraClass = '') => (
-        <th
-            className={extraClass}
-            onClick={() => handleSort(field)}
-            style={{ cursor: 'pointer', userSelect: 'none' }}
-        >
-            {label} {renderSortIcon(field)}
-        </th>
-    );
 
     return (
         <div className="idc3__table-wrap">
             <table className="idc3__table">
                 <thead>
                     <tr>
-                        <th className="idc3__col-num">#</th>
-                        {sortableTh('hostname', 'Hostname')}
-                        {sortableTh('location', 'Location (Rack)')}
-                        {sortableTh('position_u', 'U')}
-                        {sortableTh('brand', 'Brand', 'idc3__col-brand')}
-                        {sortableTh('model', 'Model')}
-                        {sortableTh('serial_number', 'S/N')}
+                        <th style={{ width: '50px' }}>#</th>
+                        <th onClick={() => handleSort('hostname')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Hostname {renderSortIcon('hostname')}
+                        </th>
+                        <th onClick={() => handleSort('location')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Location (Rack) {renderSortIcon('location')}
+                        </th>
+                        <th onClick={() => handleSort('position_u')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            U {renderSortIcon('position_u')}
+                        </th>
+                        <th onClick={() => handleSort('brand')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Brand {renderSortIcon('brand')}
+                        </th>
+                        <th onClick={() => handleSort('model')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            Model {renderSortIcon('model')}
+                        </th>
+                        <th onClick={() => handleSort('serial_number')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                            S/N {renderSortIcon('serial_number')}
+                        </th>
                         {showSync && <th>FaceRack</th>}
                         {hasActions && <th></th>}
                     </tr>
@@ -471,17 +474,17 @@ function IdcTable({ rows, onDelete, onSave, showSync }) {
                         const sync = SYNC_LABEL[d.sync_status];
                         return (
                             <tr key={d.id || `row-${i}`} className={editing ? 'idc3__row--edit' : ''}>
-                                <td className="idc3__col-num">{i + 1}</td>
+                                <td>{i + 1}</td>
 
                                 {editing ? (
                                     <>
-                                        <td data-label="Hostname"><input className="idc3__input idc3__input--lg" value={form.hostname} onChange={change('hostname')} onKeyDown={onKey} autoFocus /></td>
-                                        <td data-label="Location"><input className="idc3__input" value={form.location} onChange={change('location')} onKeyDown={onKey} /></td>
-                                        <td data-label="U"><input className="idc3__input idc3__input--sm" value={form.position_u} onChange={change('position_u')} onKeyDown={onKey} /></td>
-                                        <td data-label="Brand" className="idc3__col-brand"><input className="idc3__input" value={form.brand} onChange={change('brand')} onKeyDown={onKey} /></td>
-                                        <td data-label="Model"><input className="idc3__input idc3__input--lg" value={form.model} onChange={change('model')} onKeyDown={onKey} /></td>
-                                        <td data-label="S/N"><input className="idc3__input" value={form.serial_number} onChange={change('serial_number')} onKeyDown={onKey} placeholder="เว้นว่างได้" /></td>
-                                        {showSync && <td data-label="FaceRack">-</td>}
+                                        <td><input className="idc3__input idc3__input--lg" value={form.hostname} onChange={change('hostname')} onKeyDown={onKey} autoFocus /></td>
+                                        <td><input className="idc3__input" value={form.location} onChange={change('location')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input idc3__input--sm" value={form.position_u} onChange={change('position_u')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input" value={form.brand} onChange={change('brand')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input idc3__input--lg" value={form.model} onChange={change('model')} onKeyDown={onKey} /></td>
+                                        <td><input className="idc3__input" value={form.serial_number} onChange={change('serial_number')} onKeyDown={onKey} placeholder="เว้นว่างได้" /></td>
+                                        {showSync && <td>-</td>}
                                         <td className="idc3__actions">
                                             <button type="button" className="mini-btn mini-btn--save" onClick={submitEdit} disabled={saving}>
                                                 {saving ? '...' : 'บันทึก'}
@@ -491,19 +494,19 @@ function IdcTable({ rows, onDelete, onSave, showSync }) {
                                     </>
                                 ) : (
                                     <>
-                                        <td data-label="Hostname">{d.hostname}</td>
-                                        <td data-label="Location">{d.location}</td>
-                                        <td data-label="U">{d.position_u}</td>
-                                        <td data-label="Brand" className="idc3__col-brand">{d.brand}</td>
-                                        <td data-label="Model">{d.model}</td>
-                                        <td data-label="S/N">
+                                        <td>{d.hostname}</td>
+                                        <td>{d.location}</td>
+                                        <td>{d.position_u}</td>
+                                        <td>{d.brand}</td>
+                                        <td>{d.model}</td>
+                                        <td>
                                             {d.serial_number || (
                                                 <span className="idc3__missing">{onSave ? 'ยังไม่มี S/N' : ''}</span>
                                             )}
                                         </td>
 
                                         {showSync && (
-                                            <td data-label="FaceRack">
+                                            <td>
                                                 {d.sync_status ? (
                                                     <span
                                                         className={`idc3__sync idc3__sync--${sync ? sync[1] : 'err'}`}

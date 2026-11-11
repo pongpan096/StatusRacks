@@ -284,7 +284,7 @@
 
 .rf-field input,
 .rf-field select {
-  wwwidth: 100%;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid #64748b;
   border-radius: 8px;

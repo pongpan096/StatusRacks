@@ -39,7 +39,8 @@ router.get('/', async (req, res) => {
 router.post('/import', async (req, res) => {
   try {
     const { site, rows } = req.body;
-    const table = getTable(site);
+    const currentSite = site || 'IDC3-1';
+    const table = getTable(currentSite);
     if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
     if (!Array.isArray(rows) || rows.length === 0) {
       return res.status(400).json({ message: 'ไม่มีข้อมูลสำหรับนำเข้า' });
@@ -136,11 +137,11 @@ router.post('/import', async (req, res) => {
       }
     }
 
-    // 3) ซิงก์ไป FaceRack (ถ้าพัง ไม่ให้การนำเข้าล้มไปด้วย)
+    // 3) ซิงก์ไป FaceRack (ส่ง currentSite เข้าไปด้วยเพื่อให้กรองตู้ถูกไซต์)
     let sync = { synced: 0, failed: [] };
     let syncError = null;
     try {
-      sync = await syncRows(table, touched);
+      sync = await syncRows(table, touched, currentSite);
     } catch (e) {
       syncError = e.message;
       console.error('sync error:', e.message);
@@ -164,7 +165,8 @@ router.post('/import', async (req, res) => {
 // POST /api/idc3/sync?site=IDC3-1  (ซิงก์ทุกแถวไป FaceRack ใหม่)
 router.post('/sync', async (req, res) => {
   try {
-    const table = getTable(req.query.site);
+    const site = req.query.site || 'IDC3-1';
+    const table = getTable(site);
     if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
 
     const { data, error } = await supabase
@@ -173,7 +175,7 @@ router.post('/sync', async (req, res) => {
       .order('created_at', { ascending: true });
     if (error) throw error;
 
-    const result = await syncRows(table, data || []);
+    const result = await syncRows(table, data || [], site);
     res.json({
       message: 'ซิงก์เสร็จ',
       synced: result.synced,
@@ -188,7 +190,8 @@ router.post('/sync', async (req, res) => {
 // PUT /api/idc3/:id?site=IDC3-1  (แก้ไข แล้วซิงก์ไป FaceRack)
 router.put('/:id', async (req, res) => {
   try {
-    const table = getTable(req.query.site);
+    const site = req.query.site || 'IDC3-1';
+    const table = getTable(site);
     if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
 
     const b = req.body || {};
@@ -219,7 +222,7 @@ router.put('/:id', async (req, res) => {
 
     let out = data;
     try {
-      await syncRows(table, [data]);
+      await syncRows(table, [data], site);
       const { data: fresh } = await supabase.from(table).select('*').eq('id', data.id).single();
       if (fresh) out = fresh;
     } catch (e) {
@@ -231,16 +234,13 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/idc3/:id?site=IDC3-1
-// ═══════════════════════════════════════════════════════════
-// เส้นทางสำหรับลบข้อมูลทั้งหมดใน Table ตาม site (ต้องอยู่บนสุด)
-// ═══════════════════════════════════════════════════════════
+// DELETE /api/idc3/clear?site=IDC3-1
 router.delete('/clear', async (req, res) => {
     try {
-        const table = getTable(req.query.site);
+        const site = req.query.site || 'IDC3-1';
+        const table = getTable(site);
         if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
 
-        // คำสั่งลบข้อมูลทั้งหมดในตารางของ Supabase (เช่น เงื่อนไข id.not.is.null หรือลบทุกแถว)
         const { error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
         
         if (error) throw error;
@@ -250,12 +250,11 @@ router.delete('/clear', async (req, res) => {
     }
 });
 
-// ═══════════════════════════════════════════════════════════
-// เส้นทางเดิมสำหรับลบทีละ ID (ห้ามลบออก วางไว้ด้านล่างตามเดิม)
-// ═══════════════════════════════════════════════════════════
+// DELETE /api/idc3/:id?site=IDC3-1
 router.delete('/:id', async (req, res) => {
     try {
-        const table = getTable(req.query.site);
+        const site = req.query.site || 'IDC3-1';
+        const table = getTable(site);
         if (!table) return res.status(400).json({ message: 'site ไม่ถูกต้อง' });
 
         const { error } = await supabase.from(table).delete().eq('id', req.params.id);

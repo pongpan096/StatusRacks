@@ -1,102 +1,98 @@
-/* ═══════════════ IDC3 Page ═══════════════ */
-
+/* ═════════════ กรอบหน้า ═════════════ */
 .idc3 {
     width: 100%;
-    max-width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 24px 32px 48px;
     box-sizing: border-box;
-    padding: 20px 24px;
-    background: rgba(255, 255, 255, 0.96);
-    border-radius: 16px;
+    font-family: 'Sarabun', 'Noto Sans Thai', 'Segoe UI', Tahoma, sans-serif;
+    color: #1e293b;
 }
 
-/* ═══════════ หัวหน้า + แถบเครื่องมือ ═══════════ */
+/* ═════════════ หัวหน้า + แถบเครื่องมือ ═════════════ */
 .idc3__head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px 16px;
+    gap: 12px;
     margin-bottom: 16px;
 }
 
 .idc3__head h2 {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
     margin: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
     font-size: 1.5rem;
-    font-weight: 800;
-    color: #0f172a;
 }
 
 .idc3__count {
-    padding: 3px 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 2px 12px;
     border-radius: 999px;
     background: #e2e8f0;
     color: #334155;
-    font-size: 0.82rem;
-    font-weight: 700;
 }
 
 .idc3__count--warn {
-    background: #fef3c7;
-    color: #b45309;
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fdba74;
 }
 
 .idc3__toolbar {
     display: flex;
-    flex: 1 1 auto;
     flex-wrap: wrap;
     align-items: center;
+    gap: 8px;
     justify-content: flex-end;
-    gap: 10px;
-    min-width: 0;
 }
 
 .idc3__search {
-    flex: 1 1 220px;
-    min-width: 0;
-    max-width: 360px;
-    padding: 9px 12px;
+    flex: 1;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 8px 12px;
     border: 1px solid #cbd5e1;
     border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
     background: #fff;
-    font-size: 0.92rem;
-    box-sizing: border-box;
 }
 
 .idc3__search:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    outline: 2px solid #bfdbfe;
+    border-color: #60a5fa;
 }
 
+/* ═════════════ ปุ่มหลัก ═════════════ */
 .idc3__btn {
-    padding: 9px 16px;
-    border: 1px solid #1e293b;
+    padding: 8px 16px;
+    border: 1px solid #334155;
     border-radius: 8px;
-    background: #1e293b;
+    background: #334155;
     color: #fff;
     font-size: 0.9rem;
-    font-weight: 700;
-    white-space: nowrap;
+    font-family: inherit;
     cursor: pointer;
-    transition: opacity 0.15s, background 0.15s;
+    white-space: nowrap;
+    transition: background 0.15s;
 }
 
-.idc3__btn:hover:not(:disabled) {
-    opacity: 0.88;
-}
-
-.idc3__btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.idc3__btn:hover {
+    background: #1e293b;
 }
 
 .idc3__btn--ghost {
     background: #fff;
-    color: #1e293b;
+    color: #334155;
+}
+
+.idc3__btn--ghost:hover {
+    background: #f1f5f9;
 }
 
 .idc3__btn--ok {
@@ -104,48 +100,55 @@
     border-color: #16a34a;
 }
 
-/* ═══════════ ข้อความแจ้งผล ═══════════ */
+.idc3__btn--ok:hover {
+    background: #15803d;
+}
+
+.idc3__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ═════════════ แถบข้อความ ═════════════ */
 .idc3__msg {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 12px;
-    margin-bottom: 16px;
-    padding: 12px 16px;
-    border: 1px solid;
+    margin-bottom: 14px;
+    padding: 10px 14px;
     border-radius: 8px;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     line-height: 1.5;
-    overflow-wrap: anywhere;
 }
 
 .idc3__msg--ok {
     background: #dcfce7;
-    border-color: #86efac;
     color: #166534;
+    border: 1px solid #86efac;
 }
 
 .idc3__msg--err {
     background: #fee2e2;
-    border-color: #fca5a5;
     color: #991b1b;
+    border: 1px solid #fca5a5;
 }
 
 .idc3__msg-close {
-    flex-shrink: 0;
+    background: none;
     border: 0;
-    background: transparent;
-    color: inherit;
-    font-size: 1.2rem;
+    padding: 0 4px;
+    font-size: 1.3rem;
     line-height: 1;
+    color: inherit;
     cursor: pointer;
 }
 
-/* ═══════════ พรีวิวก่อนนำเข้า ═══════════ */
+/* ═════════════ กล่องตัวอย่างก่อนนำเข้า ═════════════ */
 .idc3__preview {
     margin-bottom: 20px;
     padding: 14px;
-    border: 1px dashed #94a3b8;
+    border: 1px dashed #60a5fa;
     border-radius: 12px;
     background: #f8fafc;
 }
@@ -156,68 +159,58 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .idc3__preview-actions {
     display: flex;
-    flex-wrap: wrap;
     gap: 8px;
 }
 
 .idc3__file {
     color: #64748b;
-    font-size: 0.88rem;
-    overflow-wrap: anywhere;
+    font-size: 0.85rem;
 }
 
 .idc3__more {
-    margin: 10px 0 0;
+    margin: 8px 2px 0;
     color: #475569;
     font-size: 0.85rem;
 }
 
-.idc3__empty {
-    padding: 32px;
-    text-align: center;
-    color: #64748b;
-}
-
-/* ═══════════ ตาราง ═══════════ */
+/* ═════════════ ตาราง (ขยายเต็มพื้นที่ ไม่มี scroll ขัดจังหวะ) ═════════════ */
 .idc3__table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    /* กันหลุดขอบ: ถ้าจำเป็นจริง ๆ ให้เลื่อนเฉพาะในกรอบ */
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
+    overflow: visible; /* ปลดล็อกไม่ให้จำกัดกรอบความสูง */
     background: #fff;
-    -webkit-overflow-scrolling: touch;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
 }
 
 .idc3__table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: auto;
-    font-size: 0.92rem;
-    color: #0f172a;
+    font-size: 0.9rem;
 }
 
-.idc3__table th {
-    padding: 12px 12px;
-    background: #1e293b;
-    color: #fff;
-    font-size: 0.88rem;
-    font-weight: 700;
+.idc3__table th,
+.idc3__table td {
+    padding: 10px 16px;
     text-align: left;
     white-space: nowrap;
 }
 
+.idc3__table thead th {
+    position: sticky;
+    top: 60px; /* เว้นระยะจากแถบเมนูด้านบน (MenuBar ติด sticky ด้านบนสุด 0px) ป้องกันเมนูบังหัวตาราง */
+    z-index: 10;
+    background: #1e293b;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .idc3__table td {
-    padding: 11px 12px;
     border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle;
-    overflow-wrap: anywhere;
-    /* ข้อความยาวขึ้นบรรทัดใหม่ ไม่ดันตารางให้กว้าง */
 }
 
 .idc3__table tbody tr:nth-child(even) {
@@ -228,35 +221,37 @@
     background: #eff6ff;
 }
 
-.idc3__table tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.idc3__col-num {
-    width: 44px;
+.idc3__empty {
+    padding: 30px;
+    text-align: center;
     color: #64748b;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
 }
 
-.idc3__row--edit,
-.idc3__table tbody tr.idc3__row--edit {
-    background: #fefce8;
-}
-
+/* ═════════════ ป้ายในตาราง ═════════════ */
 .idc3__missing {
-    color: #dc2626;
-    font-size: 0.85rem;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 0.8rem;
     font-style: italic;
 }
 
-/* ป้ายสถานะ FaceRack */
+.idc3__missing:empty {
+    display: none;
+}
+
 .idc3__sync {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 10px;
     border-radius: 999px;
     background: #f1f5f9;
     color: #64748b;
     font-size: 0.78rem;
-    font-weight: 700;
     white-space: nowrap;
 }
 
@@ -266,8 +261,8 @@
 }
 
 .idc3__sync--warn {
-    background: #fef3c7;
-    color: #b45309;
+    background: #fff7ed;
+    color: #c2410c;
 }
 
 .idc3__sync--err {
@@ -275,177 +270,112 @@
     color: #b91c1c;
 }
 
-/* ช่องกรอกตอนแก้ไข */
+/* ═════════════ แถวที่กำลังแก้ไข ═════════════ */
+.idc3__table tbody tr.idc3__row--edit {
+    background: #eff6ff;
+}
+
+.idc3__row--edit td {
+    padding: 6px 8px;
+}
+
 .idc3__input {
     width: 100%;
-    min-width: 70px;
+    min-width: 110px;
+    box-sizing: border-box;
     padding: 6px 8px;
-    border: 1px solid #94a3b8;
+    border: 1px solid #60a5fa;
     border-radius: 6px;
     background: #fff;
-    font-size: 0.9rem;
-    box-sizing: border-box;
-}
-
-.idc3__input--sm {
-    min-width: 54px;
-}
-
-.idc3__input--lg {
-    min-width: 110px;
+    font-size: 0.85rem;
+    font-family: inherit;
 }
 
 .idc3__input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    outline: 2px solid #bfdbfe;
 }
 
-/* คอลัมน์ปุ่ม: ไม่ให้ถูกบีบจนหลุดขอบ */
+.idc3__input--sm {
+    min-width: 70px;
+}
+
+.idc3__input--lg {
+    min-width: 230px;
+}
+
+/* ═════════════ ปุ่มเล็กในแถว ═════════════ */
 .idc3__actions {
-    width: 1%;
     white-space: nowrap;
-    text-align: right;
 }
 
 .idc3__actions .mini-btn {
-    margin-left: 6px;
+    margin-right: 6px;
 }
 
-.idc3__actions .mini-btn:first-child {
-    margin-left: 0;
+.idc3__actions .mini-btn:last-child {
+    margin-right: 0;
 }
 
-.idc3 .mini-btn--save {
+.mini-btn {
+    padding: 5px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.mini-btn:hover {
+    background: #f1f5f9;
+}
+
+.mini-btn--edit {
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.mini-btn--edit:hover {
+    background: #dbeafe;
+}
+
+.mini-btn--save {
     background: #16a34a;
     border-color: #16a34a;
     color: #fff;
 }
 
-/* ═══════════ จอกลาง: ซ่อน Brand ═══════════ */
-@media (max-width: 1100px) {
-    .idc3 {
-        padding: 16px;
-    }
-
-    .idc3__col-brand {
-        display: none;
-    }
-
-    .idc3__table th,
-    .idc3__table td {
-        padding: 10px 8px;
-        font-size: 0.88rem;
-    }
+.mini-btn--save:hover {
+    background: #15803d;
 }
 
-/* ═══════════ มือถือ: แปลงแถวเป็น Card ═══════════ */
+.mini-btn--del {
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.mini-btn--del:hover {
+    background: #fee2e2;
+}
+
+.mini-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ═════════════ จอเล็ก ═════════════ */
 @media (max-width: 768px) {
     .idc3 {
-        padding: 12px;
-        border-radius: 12px;
-    }
-
-    .idc3__head {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .idc3__toolbar {
-        justify-content: stretch;
+        padding: 16px 12px 40px;
     }
 
     .idc3__search {
-        flex: 1 1 100%;
-        max-width: none;
-    }
-
-    .idc3__toolbar .idc3__btn {
-        flex: 1 1 auto;
-    }
-
-    .idc3__table-wrap {
-        overflow: visible;
-        border: 0;
-        background: transparent;
-    }
-
-    .idc3__table,
-    .idc3__table tbody {
-        display: block;
-    }
-
-    .idc3__table thead {
-        display: none;
-    }
-
-    .idc3__table tbody {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .idc3__table tbody tr,
-    .idc3__table tbody tr:nth-child(even) {
-        display: block;
-        padding: 6px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    }
-
-    .idc3__table td {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 8px 0;
-        border-bottom: 1px solid #f1f5f9;
-        text-align: right;
-    }
-
-    .idc3__table td::before {
-        content: attr(data-label);
-        flex: 0 0 90px;
-        color: #64748b;
-        font-size: 0.8rem;
-        font-weight: 700;
-        text-align: left;
-    }
-
-    .idc3__col-num {
-        display: none !important;
-    }
-
-    .idc3__col-brand {
-        display: flex;
-    }
-
-    /* มือถือโชว์ Brand กลับมา */
-
-    .idc3__table td[data-label="Hostname"] {
-        font-size: 1.02rem;
-        font-weight: 800;
-    }
-
-    .idc3__input {
         min-width: 0;
-        flex: 1;
+        width: 100%;
     }
 
-    .idc3__table td.idc3__actions {
-        width: auto;
-        justify-content: flex-end;
-        padding: 10px 0 6px;
-        border-bottom: 0;
-    }
-
-    .idc3__table td.idc3__actions::before {
-        display: none;
-    }
-
-    .idc3__actions .mini-btn {
-        padding: 7px 14px;
+    .idc3__toolbar {
+        width: 100%;
     }
 }
